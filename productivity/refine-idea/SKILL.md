@@ -1,5 +1,5 @@
 ---
-name: refine
+name: refine-idea
 user-invocable: true
 disable-model-invocation: true
 description: >-
@@ -9,7 +9,7 @@ description: >-
   separate confidence level.
 ---
 
-# Refine
+# Refine Idea
 
 Take a raw idea — over-scoped, fuzzy-edged, maybe already built, resting on unexamined beliefs — and
 hand back a sharper, smaller version plus an honest call on whether to pursue it. **North star: the
@@ -93,5 +93,5 @@ Scale depth to the idea; don't pad.
 - **Genuinely dead:** deliver the kill kindly, with the reason and what would've changed it.
 - **User pushes back:** they may know something you don't — update, you're refining together.
 - **Overlap:** `attack-*` skills are single adversarial lenses and `redteam` fans them all out;
-  refine is the end-to-end scope→verdict pass. Point users there if they want only the attack.
+  refine-idea is the end-to-end scope→verdict pass. Point users there if they want only the attack.
 ```
