@@ -1,9 +1,9 @@
 ---
-name: model
-description: Model a feature into the snapshots of a hexagonal-architecture project — rewrites docs/product.md, docs/language.md, and docs/domain/*.md to describe the business as it now stands, from one new feature or from the whole accumulated feature set. Creates product.md and language.md if they don't exist yet, so this is also how a project's model starts. Use after /feature confirms a feature, or whenever the user wants the product, vocabulary, or domain specs brought up to date with the features — "update the model", "rebuild the snapshots", "the vocabulary is out of date". Produces documentation only; /domain turns the domain specs into code.
+name: update-spec
+description: Model features into a project's snapshots — rewrites docs/product.md, docs/language.md, and docs/domain/*.md to describe the business as it now stands. Creates product.md and language.md if missing, so this is also how a project's model starts. Use after /feature, or whenever the user wants the product, vocabulary, or domain specs brought up to date ("update the model", "rebuild the snapshots", "the vocabulary is out of date"). Docs only; /domain turns the specs into code.
 ---
 
-# model
+# update-spec
 
 Features are the log; the snapshots are what you model out of them. This skill runs that modelling.
 

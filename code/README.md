@@ -3,9 +3,9 @@
 Take a business idea to domain code in three reviewable steps.
 
 ```
-/feature   →   /model    →   /domain
- describe      model into     generate
- the ask       snapshots      the code
+/feature   →   /update-spec   →   /domain
+ describe       model into        generate
+ the ask        snapshots         the code
 ```
 
 You describe a feature in plain business terms. It gets modelled into the
@@ -29,7 +29,7 @@ Nothing else is written until you're happy with this file.
 
 ### 2. Model it into the snapshots
 
-`/model` folds the feature into three snapshots of the business as it now
+`/update-spec` folds the feature into three snapshots of the business as it now
 stands:
 
 - `docs/product.md` — what the product does and where its scope ends
@@ -47,7 +47,7 @@ and a test for every business rule.
 
 If existing code contradicts a spec, it stops and asks.
 
-You can also run `/model` on its own — to refresh the docs after they drift, or
+You can also run `/update-spec` on its own — to refresh the docs after they drift, or
 to rebuild them from every feature at once.
 
 ## Features and snapshots
@@ -91,7 +91,7 @@ amendments.
 and the Go type. No synonyms. So you can grep a business word and land on the
 code — with no index to maintain.
 
-This is also why `/model` resists adding terms. One synonym breaks that,
+This is also why `/update-spec` resists adding terms. One synonym breaks that,
 everywhere, quietly.
 
 **Every rule names its error.** Each business rule pairs with the `Err…` value
@@ -106,7 +106,7 @@ file. Caught at `/domain`, it costs a rewrite.
 
 ## Limits
 
-**New bounded contexts are proposed, not created.** `/model` explains why it
+**New bounded contexts are proposed, not created.** `/update-spec` explains why it
 thinks one is needed. You decide.
 
 **`/domain` writes the core only.** No adapters, no wiring. The spec lists what

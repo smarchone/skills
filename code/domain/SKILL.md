@@ -1,6 +1,6 @@
 ---
 name: domain
-description: Implement or update hexagonal domain code in Go from the domain specs in docs/domain/. Finds which specs changed, then writes internal/<domain>/ to match — model.go, ports.go, service.go, and tests for every invariant and service rule. Use whenever the user wants domain code, use cases, or services written, updated, or reconciled with the model — "implement the domain", "write the service for X", "update the code for X", "make the code match the spec" — and after any /model run whose proposed domain-spec changes have been approved. Owns the core only; not adapters, handlers, or storage.
+description: Implement or update hexagonal Go domain code from the specs in docs/domain/. Writes internal/<domain>/ to match the spec — model.go, ports.go, service.go, and tests. Use when the user wants domain code, services, or use cases written or reconciled with the spec ("implement the domain", "write the service for X", "make the code match the spec"), and after an approved /update-spec. Core only — not adapters, handlers, or storage.
 ---
 
 # domain
@@ -13,7 +13,7 @@ The spec is also a decision the user already reviewed. They shaped the code's di
 
 1. **Load the mental model.** Read `docs/product.md` and `docs/language.md` before anything else. They carry what the business is doing and the exact words for it — without them you will invent a synonym or name a type after the wrong concept, and nothing downstream will catch it.
 
-2. **Find the work list.** `git status --short docs/domain/` and `git diff HEAD -- docs/domain/ docs/language.md`. Changed or untracked specs are what `/model` proposed and the user approved. If nothing changed, ask what to implement rather than regenerating every domain.
+2. **Find the work list.** `git status --short docs/domain/` and `git diff HEAD -- docs/domain/ docs/language.md`. Changed or untracked specs are what `/update-spec` proposed and the user approved. If nothing changed, ask what to implement rather than regenerating every domain.
 
 3. **Read each changed spec in full.** The diff scopes the work; it doesn't specify it. A one-line change to an invariant can imply a new method, a new error, and a new test.
 
