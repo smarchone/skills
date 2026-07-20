@@ -14,15 +14,13 @@ ecommerce-app/
     │   │   ├── model_test.go    # Unit tests for domain models and invariants
     │   │   ├── ports.go         
     │   │   ├── service.go
-    │   │   ├── service_test.go  # Unit tests for domain service orchestration
-    │   │   └── context.md   
+    │   │   └── service_test.go  # Unit tests for domain service orchestration
     │   └── Order/               # Order Context
     │       ├── model.go         
     │       ├── model_test.go    # Unit tests for domain models and invariants
     │       ├── ports.go         
-    │       └── service.go   
-    │       ├── service_test.go  # Unit tests for domain service orchestration
-    │       └── context.md     
+    │       ├── service.go   
+    │       └── service_test.go  # Unit tests for domain service orchestration
     └── adapters/                # THE OUTSIDE (Infrastructure implementations only)
         ├── in/                  # Inbound Adapters (Triggers / Entrypoints)
         │   ├── http/            # Web REST endpoints
