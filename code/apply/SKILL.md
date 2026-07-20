@@ -1,9 +1,9 @@
 ---
-name: domain
+name: apply
 description: Implement or update hexagonal Go domain code from the specs in docs/domain/. Writes internal/<domain>/ to match the spec — model.go, ports.go, service.go, and tests. Use when the user wants domain code, services, or use cases written or reconciled with the spec ("implement the domain", "write the service for X", "make the code match the spec"), and after an approved /update-spec. Core only — not adapters, handlers, or storage.
 ---
 
-# domain
+# apply
 
 The spec in `docs/domain/<domain>.md` is the contract. Code realises it — same types, same names, same errors. Where the two disagree, the spec wins unless the user says otherwise.
 

@@ -3,7 +3,7 @@
 Take a business idea to domain code in three reviewable steps.
 
 ```
-/feature   →   /update-spec   →   /domain
+/feature   →   /update-spec   →   /apply
  describe       model into        generate
  the ask        snapshots         the code
 ```
@@ -41,7 +41,7 @@ back as revisions.
 
 ### 3. Generate the code
 
-`/domain` reads the approved specs and writes `internal/<domain>/` — the
+`/apply` reads the approved specs and writes `internal/<domain>/` — the
 aggregate and its invariants, the ports, the service that orchestrates them,
 and a test for every business rule.
 
