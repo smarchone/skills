@@ -6,25 +6,30 @@ My agentic skill systems for Claude Code.
 
 | Skill | Group | Use when |
 |---|---|---|
-| [`/feature`](code/feature/SKILL.md) | code | Write a feature spec |
-| [`/model`](code/model/SKILL.md) | code | Fold features into the docs |
-| [`/domain`](code/domain/SKILL.md) | code | Build the domain code from the specs |
+| [`/hex-feat`](code-simple/hex-feat/SKILL.md) | code-simple | Write a feature spec |
+| [`/hex-domain`](code-simple/hex-domain/SKILL.md) | code-simple | Translate feature specs into domain models |
+| [`/hex-code`](code-simple/hex-code/SKILL.md) | code-simple | Build the domain code from the specs |
+| [`/hex-drift`](code-simple/hex-drift/SKILL.md) | code-simple | Audit the codebase against the specs |
+
+The code-simple skills run in order: `/hex-feat → /hex-domain → /hex-code`, each stopping for
+review. See [code-simple/README.md](code-simple/README.md).
+
+| Skill | Group | Use when |
+|---|---|---|
 | [`/idea-establish`](productivity/idea-establish/SKILL.md) | productivity | The idea is vague |
 | [`/idea-attack`](productivity/idea-attack/SKILL.md) | productivity | The idea needs stress-testing |
 | [`/opine`](productivity/opine/SKILL.md) | productivity | Two views are stuck |
 | [`/nail-on-the-head`](productivity/nail-on-the-head/SKILL.md) | productivity | Two concepts blur together |
 | [`/intuition`](productivity/intuition/SKILL.md) | productivity | You want to understand, not memorize |
 
-The code skills run in order: `/feature → /model → /domain`, each stopping for
-review. See [code/README.md](code/README.md).
-
 ## Install
 
 ```sh
-# code
-npx skills add smarchone/skills/code/feature
-npx skills add smarchone/skills/code/model
-npx skills add smarchone/skills/code/domain
+# code-simple
+npx skills add smarchone/skills/code-simple/hex-feat
+npx skills add smarchone/skills/code-simple/hex-domain
+npx skills add smarchone/skills/code-simple/hex-code
+npx skills add smarchone/skills/code-simple/hex-drift
 
 # productivity
 npx skills add smarchone/skills/productivity/idea-establish
