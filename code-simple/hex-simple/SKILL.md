@@ -1,5 +1,5 @@
 ---
-name: code-simple
+name: hex-simple
 description: Orchestrates a workflow to create reviewable specs and domain artifacts for a Golang Hexagonal Architecture project.
 ---
 
