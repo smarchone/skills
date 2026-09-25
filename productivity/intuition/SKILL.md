@@ -86,23 +86,6 @@ consequence" is the boundary. "Not a queue" → order doesn't matter. Two or thr
 neighbors, then the problem it never claimed to solve. If a neighbor is "kind of the same
 thing," you haven't found the consequence that separates them yet.
 
-## Failure Space
-Where the idea breaks. Every idea rests on assumptions that hold in the cases it was built
-for; a failure mode is one of them silently ceasing to hold. Give 2-3, each on its own
-labeled lines — never one dense paragraph per mode:
-
-**{Short name — 2-4 words}**
-- **Trigger:** [the condition that sets it off. One line.]
-- **Mechanism:** [what actually goes wrong. "It doesn't scale" is a symptom — say WHY.]
-- **Breaks:** [the assumption nobody knew they were making.]
-
-The Breaks line should read like something nobody would think to say out loud ("reads and
-writes are the same budget") — that's the tell you found an assumption and not a caveat.
-Prefer failures where nothing warns you: it keeps running, looks fine, quietly wrong.
-Include misuse only when the idea invites it — a shape that's routinely misapplied is a
-property of the idea, not its users.
-
-If you can't break it, you don't understand what's holding it up yet.
 
 ## Explain in Levels
 **To a student:** [plain language, one simple example, no jargon.]
@@ -174,12 +157,4 @@ Example (backprop):
 Both "why differentiable" and "why is wiggling slow" look unrelated — loss surface vs.
 compute cost — but both land on composition. That shared node is the payoff.
 
-## Feynman Gap-Check
-Feynman's claim: if you can't explain it simply, you haven't understood it —
-you've memorized its vocabulary. So this is a diagnostic, not a simplification. Explain
-the whole thing plainly, and watch for the exact moment you reach for a term you can't
-unpack, or a phrase like "and then it just works" / "for various reasons" / "somehow."
-Each of those moments is a real gap — name 2-3 of them and say what would close it.
-The gaps are the reader's to-do list: where understanding is borrowed, not earned.
-Naming them beats sounding complete; a gap-free answer here means you didn't look.
 ```
