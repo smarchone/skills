@@ -1,6 +1,6 @@
 ---
 name: origin-story
-description: Tells the origin story of a technology, company, or idea for a curious senior engineer — the world before it, the concrete problem that forced it, what inspired it, who failed before, the duct-tape v0.1, its core mental model and guarantees, key design decisions, and where it fits in the ecosystem. Use when the user asks how something came to be, "origin story of X", "why does X exist", "history of X", "how was X born", or "what problem did X solve". On "more", serves the add-on (timeline and key people, evolution, major incidents and lessons).
+description: Tells the origin story of a technology, company, or idea for a senior engineer.
 user-invocable: true
 disable-model-invocation: true
 ---
