@@ -7,93 +7,84 @@ disable-model-invocation: true
 
 # Origin Story
 
-Explain how a technology, company, or idea came into the world, for a **curious senior engineer**.
+Explain how a tech, company, or idea came to be, for a **curious senior engineer**.
 
-## Reader and voice
+## Voice & Style
+- **Audience:** Senior. Skip basics; explain specifics.
+- **Format:** Dense, skimmable, bullets, tables. One idea/line. No fluff/hype.
+- **Tone:** Concrete (names, dates, versions, real quotes).
+- **Length:** Core = 5-7 min read, ~1 screen/section.
+- **Integrity:**
+  - Real quotes only, with inline sources.
+  - Mark dramatizations as *(reconstructed)*.
+  - Mark conflicting accounts as *(disputed)* and give credible version.
+  - Acknowledge unknowns briefly; don't guess.
 
-- The reader is senior. Don't define basics (what a database, a hash, or a VC is). Explain only what's specific to the subject.
-- Keep it dense and skimmable: short bullets, tables where you're comparing, and one idea per line. No throat-clearing, no hype adjectives, no "In today's fast-paced world".
-- Be concrete over abstract. Use names, numbers, dates, versions, and real quotes.
-- Each section should fit on about one screen. The whole core should be a 5–7 minute read.
-- Honesty rules:
-  - Never invent quotes. Use real ones (mailing-list posts, papers, talks, commits) and name the source inline.
-  - If you dramatize a conversation or scene to tell the story, label it *(reconstructed)*.
-  - If accounts conflict or it's a known origin myth, say *(disputed)* and give the more credible version in one line.
-  - If you don't know something, say so briefly rather than filling the gap.
+## Subject Focus
+- **Tech/Tool:** Emphasize mental model, guarantees, design decisions.
+- **Company:** Emphasize problem, v0.1, timing, market fit (core insight + business model = mental model).
+- **Idea/Concept:** Emphasize inspiration, failed attempts, core model.
+*Drop or shrink irrelevant sections. No padding.*
 
-## Adapt to the subject
+## Default Output
+Use this structure and order:
 
-- **Technology or tool** (Kafka, Git, React): lean on the mental model, guarantees, and design decisions.
-- **Company** (Stripe, Figma): lean on the problem, the v0.1, why then, and market fit. The "mental model" becomes the core insight or business model.
-- **Idea or concept** (MapReduce, CRDTs, public-key crypto): lean on inspiration, failed attempts, and the core model.
-
-Drop a section, or shrink it to one line, if it genuinely doesn't apply. Don't pad.
-
-## Core output (default)
-
-Use this structure and order.
-
-```
+```text
 # <Subject> — origin story
-<one line: what it is> · <year born> · <creator(s) / org>
+<1-line what it is> · <year> · <creator/org>
 
 ## TL;DR
-- **Pitch:** "Wouldn't it be interesting if …?" (ideas/tech)  — or a 1-line STAR (companies/events)
-- **Aha:** the one sentence the reader should walk away with
+- **Pitch:** "Wouldn't it be interesting if…" or 1-line STAR.
+- **Aha:** Core takeaway sentence.
 
 ## Before → After
-| Before (how the world coped)        | After (what it made possible)       |
-|-------------------------------------|-------------------------------------|
-| workaround + its cost               | concrete change, with evidence      |
-(3–5 rows)
+| Before (how the world coped) | After (what it made possible) |
+|------------------------------|-------------------------------|
+(3-5 rows of workaround cost vs concrete change)
 
-## The problem that forced it
-A short story or conversation (5–12 lines): who hit what wall, when, and why the
-existing options broke. Name the real people, systems, and numbers.
+## The Catalyst Problem
+Brief story (5-12 lines): who hit what wall, when, why existing options failed. Use real names/numbers.
 
 ## Lineage
-- **Borrowed from:** earlier ideas, papers, people, or fields it stood on
-- **Tried before:** prior attempts → why they failed (timing / hardware / economics / ergonomics) → lesson
-- **Why then:** what changed that made it possible at that moment
+- **Borrowed from:** Prior ideas/fields.
+- **Tried before:** Past failures → why (timing/tech/econ) → lesson.
+- **Why then:** The shift making it possible now.
 
-## v0.1 — the duct-tape version
-What the first hacky version looked like: size, stack, what was faked or
-hard-coded, what was cut, first users, and how long it took to build.
+## v0.1 (Duct-Tape)
+First hacky version: size, stack, faked parts, initial users, build time.
 
-## Mental model
-- **Core abstractions:** the 3–5 concepts that explain 80% of it
-- **Guarantees:** what it promises
-- **Non-guarantees:** what it deliberately doesn't do (and the trade-off bought)
-- **Think of it as:** one analogy or model a senior engineer can reason with
+## Mental Model
+- **Abstractions:** 3-5 concepts explaining 80%.
+- **Guarantees:** What it promises.
+- **Non-guarantees:** What it deliberately doesn't do → trade-off bought.
+- **Think of it as:** 1 analogy for seniors.
 
-## Key design decisions
+## Key Design Decisions
 | Chose | Over | Because |
 |-------|------|---------|
-(3–5 rows: the forks in the road that shaped it)
+(3-5 forks in the road)
 
-## Where it fits
-A small ASCII map or list: upstream, downstream, competitors / alternatives,
-what it replaced, and what's now built on top of it.
+## Ecosystem Fit
+ASCII map/list: upstream, downstream, competitors, replaced tech, built on top.
 
 ---
 *Say **more** for: timeline & key people · evolution · major incidents & lessons.*
 ```
 
-## Add-on (only when the user says "more")
+## Add-on (on "more")
+Serve all three sections unless specifically requested otherwise. Don't repeat the core.
 
-Don't repeat the core. Serve all three add-on sections below unless the user asks for one specifically.
-
-```
-## Timeline & key people
+```text
+## Timeline & Key People
 | When | What happened | Who |
-(5–8 rows: only the moments that changed its trajectory)
+(5-8 trajectory-changing moments)
 
 ## Evolution
-- **v1 vs today:** what's radically different
-- **Pivots:** the turns it took and why
-- **Regrets:** what the creators later said they'd do differently (quote if real)
+- **v1 vs today:** Radical changes.
+- **Pivots:** Turns taken and why.
+- **Regrets:** Creators' hindsight (real quotes).
 
-## Major incidents & lessons
+## Incidents & Lessons
 | Incident (date) | What happened | Lesson |
-(outages, breaches, forks, lawsuits, community splits — 3–5 rows)
+(3-5 outages, breaches, forks, etc.)
 ```
