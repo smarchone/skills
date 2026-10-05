@@ -1,10 +1,12 @@
-# skills
+# Skills
 
-My agentic skill systems.
+My agentic skills.
 
 ## Must-try
 
-Start here.
+Checkout examples https://smarchone.github.io/skills/.
+
+Start here. 
 
 - **[intuition](productivity/intuition/SKILL.md)**: Build deep intuition on a topic, blog, paper, or concept by attacking it from many complementary angles. Adding this skill in chrome skills (chrome://skills) has seen to 10x my readning productivity.
 - **[intuition-panel](productivity/intuition-panel/SKILL.md)**: Feel a raw product idea through a CEO, PM, and Architect, rapid-fire, one or two lines each.
@@ -15,16 +17,6 @@ npx skills add smarchone/skills/productivity/intuition-panel
 ```
 
 ## Reference
-
-These split on one axis: who can invoke them. **User-invoked** skills are reachable only when you type them (e.g. `/opine`). **Model-invoked** skills can be invoked by you _or_ reached for automatically by the agent when the task fits.
-
-### [Ideas](ideas/README.md)
-
-Shaping and stress-testing an idea before anything gets built.
-
-- **[idea-establish](ideas/idea-establish/SKILL.md)**: Turn a vague idea into an established one by asking for the missing pieces.
-- **[idea-attack](ideas/idea-attack/SKILL.md)**: Attack an idea's assumptions and proposed approaches, search for prior art, hunt failure modes, and return effort-value suggestions.
-- **[opine](ideas/opine/SKILL.md)**: Weigh the pro and opposing views of an opinion and find a path to converge: compromise, proof, experiment, or a cheaper reframing.
 
 ### [Productivity](productivity/README.md)
 
@@ -45,11 +37,13 @@ Studying a technology, company, or system the way a senior engineer would.
 - **[adoption](systems/adoption/SKILL.md)**: Show how a tool or system is used across companies, grouped by usage pattern, how it fits each backend, and who moved off it.
 - **[build-vs-buy](systems/build-vs-buy/SKILL.md)**: Evaluate build vs. buy trade-offs: unit economics, engineering opportunity cost, scale break-even points, and migration architecture.
 
-### [Exp](exp/README.md)
+### [Ideas](ideas/README.md)
 
-Experiments. Unstable; may change, move, or be deleted.
+Shaping and stress-testing an idea before anything gets built.
 
-- **[explain-diff](exp/explain-diff/SKILL.md)**: Richly explain a code change, diff, branch, or PR as HTML.
+- **[idea-establish](ideas/idea-establish/SKILL.md)**: Turn a vague idea into an established one by asking for the missing pieces.
+- **[idea-attack](ideas/idea-attack/SKILL.md)**: Attack an idea's assumptions and proposed approaches, search for prior art, hunt failure modes, and return effort-value suggestions.
+- **[opine](ideas/opine/SKILL.md)**: Weigh the pro and opposing views of an opinion and find a path to converge: compromise, proof, experiment, or a cheaper reframing.
 
 ## Install
 

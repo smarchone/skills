@@ -183,7 +183,7 @@ TEMPLATE = """<!DOCTYPE html>
   <style>
     :root { --bg:#000; --fg:#e8e8e8; --dim:#8a8a8a; --accent:#d97757; --line:#333; --code:#141414; }
     body { background:var(--bg); color:var(--fg); margin:0; padding:24px 16px; }
-    main { max-width:860px; margin:0 auto; font:15px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    main { max-width:860px; margin:0 auto; font:14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     header { color:var(--dim); border:1px solid var(--line); border-radius:6px; padding:8px 12px; margin-bottom:24px; }
     .turn { margin-bottom:32px; }
     .prompt { background:#1c1c1c; padding:8px 12px; border-radius:6px; white-space:pre-wrap; overflow-wrap:anywhere; }
@@ -203,11 +203,16 @@ TEMPLATE = """<!DOCTYPE html>
     .tool { color:var(--dim); margin:8px 0; }
     .tool pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:320px; overflow:auto; background:var(--code); padding:8px; }
     .done { color:var(--dim); margin-top:12px; }
+    .back { display:inline-block; color:var(--accent); font-size:1.15em; font-weight:600; text-decoration:none; margin:0 0 12px; }
+    .back:hover { text-decoration:underline; }
+    .back.bottom { margin:24px 0 0; }
   </style>
 </head>
 <body>
 <main>
+<a class="back" href="index.html">← Examples</a>
 {{BODY}}
+<a class="back bottom" href="index.html">← Examples</a>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.7/marked.min.js"></script>
 <script>

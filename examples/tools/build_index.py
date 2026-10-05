@@ -45,7 +45,7 @@ TEMPLATE = """<!DOCTYPE html>
   <style>
     :root { --bg:#000; --fg:#e8e8e8; --dim:#8a8a8a; --accent:#d97757; --line:#333; }
     body { background:var(--bg); color:var(--fg); margin:0; padding:24px 16px; }
-    main { max-width:860px; margin:0 auto; font:15px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    main { max-width:860px; margin:0 auto; font:14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     h1 { font-size:1.2em; margin:0 0 4px; }
     p { color:var(--dim); margin:0 0 24px; }
     h2 { font-size:1em; color:var(--accent); margin:24px 0 4px; }

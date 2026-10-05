@@ -7,7 +7,7 @@
   <style>
     :root { --bg:#000; --fg:#e8e8e8; --dim:#8a8a8a; --accent:#d97757; --line:#333; --code:#141414; }
     body { background:var(--bg); color:var(--fg); margin:0; padding:24px 16px; }
-    main { max-width:860px; margin:0 auto; font:15px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    main { max-width:860px; margin:0 auto; font:14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     header { color:var(--dim); border:1px solid var(--line); border-radius:6px; padding:8px 12px; margin-bottom:24px; }
     .turn { margin-bottom:32px; }
     .prompt { background:#1c1c1c; padding:8px 12px; border-radius:6px; white-space:pre-wrap; overflow-wrap:anywhere; }
@@ -25,10 +25,14 @@
     .tool { color:var(--dim); margin:8px 0; }
     .tool pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:320px; overflow:auto; background:var(--code); padding:8px; }
     .done { color:var(--dim); margin-top:12px; }
+    .back { display:inline-block; color:var(--accent); font-size:1.15em; font-weight:600; text-decoration:none; margin:0 0 12px; }
+    .back:hover { text-decoration:underline; }
+    .back.bottom { margin:24px 0 0; }
   </style>
 </head>
 <body>
 <main>
+<a class="back" href="index.html">← Examples</a>
 <header><div>Claude Code </div><div>claude-opus-5</div><div></div></header>
 <section class="turn"><div class="prompt">❯ /intuition-panel im a senior engineer trying to build intuitive experience about tech without actually using them. help me build strong intuition on the said tech with situational problems and how to fix them. (this is what education is... to prepare students for situations). lets do onion layer approach. establish happy paths with guarantees and abstractions and introduce problems layer by layer to deep dive understand the tech.
   keep the explaination simple without dumping everything. this will be conversational (top down approach). lets assume i have adhd.</div>
@@ -266,6 +270,7 @@ Third: scaling out mid-lag. Cooperative rebalances while the survivors keep cons
 None fatal. Just: sticky ≠ balanced, and revoke ≠ empty.</pre></div>
 <div class="done">✻ Done in 8s</div>
 </section>
+<a class="back bottom" href="index.html">← Examples</a>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.7/marked.min.js"></script>
 <script>
