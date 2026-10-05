@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intuition : redis</title>
+  <style>
+    :root { --bg:#000; --fg:#e8e8e8; --dim:#8a8a8a; --accent:#d97757; --line:#333; --code:#141414; }
+    body { background:var(--bg); color:var(--fg); margin:0; padding:24px 16px; }
+    main { max-width:860px; margin:0 auto; font:15px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    header { color:var(--dim); border:1px solid var(--line); border-radius:6px; padding:8px 12px; margin-bottom:24px; }
+    .turn { margin-bottom:32px; }
+    .prompt { background:#1c1c1c; padding:8px 12px; border-radius:6px; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .md { overflow-wrap:anywhere; }
+    .md pre.raw { white-space:pre-wrap; font:inherit; margin:16px 0; }
+    .md h1, .md h2, .md h3, .md h4 { font-size:1em; color:var(--accent); margin:1.4em 0 .4em; }
+    .md table { border-collapse:collapse; width:100%; margin:12px 0; display:block; overflow-x:auto; }
+    .md th, .md td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+    .md th { background:#141414; }
+    .md code { background:var(--code); padding:1px 4px; border-radius:3px; }
+    .md pre { background:var(--code); padding:10px 12px; border-radius:6px; overflow-x:auto; }
+    .md pre code { background:none; padding:0; }
+    .md a { color:var(--accent); }
+    .md hr { border:0; border-top:1px solid var(--line); }
+    .tool { color:var(--dim); margin:8px 0; }
+    .tool pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:320px; overflow:auto; background:var(--code); padding:8px; }
+    .done { color:var(--dim); margin-top:12px; }
+  </style>
+</head>
+<body>
+<main>
+<header><div>Claude Code </div><div>claude-opus-5</div><div></div></header>
+<section class="turn"><div class="prompt">❯ /intuition origin story of redis.</div>
+<div class="md"><pre class="raw"># Intuition: The Origin of Redis
+
+## Elevator Pitch
+In 2009 Salvatore Sanfilippo (antirez) was building LLOOGG, a real-time &quot;who&#x27;s on my site right now&quot; analytics tool for tiny Italian web hosts. Every page view was a write, and the query was always the same: &quot;show me the last N events for this site.&quot; MySQL choked on the write rate, and the pain was that the database made him translate a trivially simple idea — *a capped list per site* — into rows, indexes, and DELETE queries. So he wrote a server that just *was* a list. Then a set, a hash, a sorted set. That server is Redis.
+
+**If you remember nothing else:** Redis exists because someone needed a list in memory that survived across processes, and no database at the time would let him say &quot;list&quot; without translating it into &quot;table.&quot;
+
+## In the Wild (STAR)
+- **Situation:** A one-person startup ships a JavaScript snippet that pings a server on every page view across a few thousand sites. The product page shows the *latest 100 views per site*, live. Data older than that is worthless.
+- **Task:** Each ping is an INSERT; every dashboard refresh is a `SELECT … ORDER BY ts DESC LIMIT 100`; and something has to DELETE the old rows or the table grows forever. On a single cheap VPS, MySQL&#x27;s disk-bound writes fall behind by mid-afternoon. Adding a bigger box costs more than the product earns.
+- **Action:** Replace the table with an in-memory server where the whole operation is two commands: `LPUSH site:42 &lt;event&gt;` then `LTRIM site:42 0 99`. The data structure *is* the schema; the cap *is* the retention policy. Snapshot to disk every few seconds.
+- **Result:** Writes go from disk-bound to memory-bound — orders of magnitude more throughput on the same box. The bill: if the process dies between snapshots, you lose a few seconds of views, and the working set must fit in RAM.
+
+**The tell:** (1) Your access pattern is a *named operation on a data structure* (&quot;push and cap,&quot; &quot;add to set,&quot; &quot;increment counter&quot;), not an ad-hoc query. (2) Losing the last few seconds of data is embarrassing, not catastrophic.
+
+## The Key Insight
+**Before:** a database is a store of records you query; durability is non-negotiable; data structures live in your process and die with it. **The flip:** treat the *data structure itself* as the unit the server understands, keep it in RAM as the primary copy (not a cache in front of something), and make durability a tunable dial rather than a premise. Once you accept &quot;memory is the database, disk is the backup,&quot; lists, sets, and sorted sets with O(1)/O(log n) operations fall out naturally — and so does the &quot;Remote Dictionary Server&quot; name. Everything else about Redis (single-threaded event loop, atomic commands, pub/sub) follows from making that one bet.
+
+## Negative Space
+- **Not memcached.** Memcached&#x27;s values are opaque bytes; you fetch, mutate in your app, and race to write back. In Redis the server mutates the structure, so `LPUSH` from ten clients is atomic without locks — and Redis can persist, which memcached never claimed.
+- **Not a cache in front of a database.** A cache can vanish without consequence; in LLOOGG there *was* no other copy. Redis was born as a primary store with weakened durability, and &quot;cache&quot; was a use people found later.
+- **Not a queue** (originally). Lists made queues easy, but there was no delivery guarantee, ack, or consumer group until Streams a decade later. It never claimed to solve exactly-once delivery — or ad-hoc querying across keys.
+
+## Failure Space
+
+**Working set outgrows RAM**
+- **Trigger:** Data grows past memory; you don&#x27;t notice because writes still succeed.
+- **Mechanism:** Either eviction policies silently drop keys you thought were durable, or the box swaps and the single-threaded loop stalls on every command.
+- **Breaks:** &quot;The dataset is small enough to be an in-process structure&quot; — true for last-100-views, false for &quot;all events ever.&quot;
+
+**Big-O on the wrong side**
+- **Trigger:** Someone runs `KEYS *`, `SMEMBERS` on a million-member set, or `LRANGE 0 -1`.
+- **Mechanism:** One thread serves everyone; one O(n) command blocks every other client for its full duration. Looks like network latency; it&#x27;s head-of-line blocking.
+- **Breaks:** &quot;Every command is fast&quot; — Redis only promised that for the *operations it was designed around*, not for every operation it exposes.
+
+**Durability dial left at the default**
+- **Trigger:** Redis becomes the system of record for orders, not page views; nobody revisits `save` / `appendfsync`.
+- **Mechanism:** Crash between snapshots loses the last N seconds of writes; nothing errors, data is just gone.
+- **Breaks:** &quot;Losing a few seconds is fine&quot; — the assumption LLOOGG&#x27;s problem made *true*, silently carried into a problem where it isn&#x27;t.
+
+## Explain in Levels
+**To a student:** Imagine keeping a notepad of the last 100 visitors on your desk instead of filing every visitor in a cabinet downstairs. Writing on the notepad is instant; every so often you photocopy it in case the desk catches fire. Redis is a notepad you can share across computers.
+
+**To an engineer:** A single-threaded event loop over an in-memory dictionary whose values are real data structures (list, set, hash, sorted set); commands are atomic by construction because nothing runs concurrently. Persistence is RDB snapshots (fork + copy-on-write) and/or an append-only log with configurable fsync. Reach for it when your access pattern is a named structural operation and your working set fits in RAM; avoid it as a general query engine.
+
+**To a PhD:** Redis is a linearizable single-node state machine over a key→ADT map, trading the durability leg of ACID for latency by decoupling the commit point from fsync. Persistence via fork exploits OS copy-on-write to get a consistent snapshot at near-zero pause cost, at the price of memory amplification under write-heavy loads. The design&#x27;s subtlety is that atomicity is a *consequence* of serialization rather than a feature — which is exactly why the later additions (Lua scripting, MULTI/EXEC, Cluster&#x27;s per-slot atomicity) had to be shaped around preserving that single-thread invariant.
+
+## Rediscover It (Simulated Conversation)
+**Marta:** MySQL&#x27;s falling behind on the page-view inserts. Bigger box?
+**Dario:** We&#x27;re a two-person shop. What&#x27;s the query, actually?
+**Marta:** Always &quot;last 100 events for site X.&quot; Nothing else. Ever.
+**Dario:** Then index on (site, ts) and DELETE old rows on a cron.
+**Marta:** Tried it. The DELETEs are the write load now. And every insert still hits disk.
+**Dario:** Skip the DB — keep a per-site array in the web process, cap at 100.
+**Marta:** Two things. We run four worker processes; each sees a quarter of the pings. And a restart wipes everything.
+**Dario:** So it needs to be *one* process the workers talk to over a socket… which is basically a database again.
+**Marta:** Only if it stores rows. What if it stores *the array*? The command is &quot;append and trim,&quot; not INSERT.
+**Dario:** And the restart problem?
+**Marta:** Dump the arrays to disk every few seconds. If we lose five seconds of page views, nobody&#x27;s dashboard notices.
+**Dario:** So a server that holds lists in memory, speaks &quot;push/trim&quot; over a socket, and snapshots itself. That&#x27;s… not a database. It&#x27;s a shared data structure.
+
+## Question Ladder
+
+```
+        Why did MySQL fall over on page views?
+               /                    \
+   Every write hits disk        Schema forces &quot;capped list&quot;
+   (durable by default)         into INSERT+SELECT+DELETE
+          |                              |
+   Is disk durability             Why must the server
+   actually required here?        see rows, not a list?
+          |                              |
+   No — last few seconds          It doesn&#x27;t, if the server
+   are disposable                 understands the structure
+          \                             /
+           \                           /
+        &quot;The primary copy can live in RAM
+         as a native data structure&quot;
+                       |
+        ┌──────────────┴──────────────┐
+   Single thread suffices      Durability = periodic dump
+   (memory ops are μs)         (a dial, not a premise)
+        └──────────────┬──────────────┘
+                     REDIS
+```
+
+The two branches look unrelated — one is about I/O cost, the other about data modeling — but both bottom out on the same node: the server should hold the *structure*, in memory, as the real copy. Both consequences below it (single thread, snapshotting) are only reasonable *because* of that node.
+
+## Feynman Gap-Check
+Plain version: &quot;Antirez needed a capped list shared between processes; databases made that slow and awkward; so he wrote a server that holds lists in memory and dumps them to disk periodically; it turned out lots of problems are shaped like that.&quot;
+
+Where I reached for borrowed understanding:
+1. **&quot;Fork gives a consistent snapshot for free.&quot;** I can say &quot;copy-on-write&quot; but can&#x27;t fully account for the memory blow-up under heavy writes — how bad, at what write rate. Closing it: read the RDB persistence internals and measure RSS during a `BGSAVE` under load.
+2. **&quot;Single-threaded is fast enough.&quot;** True for μs commands, but I&#x27;m hand-waving why Redis *stayed* single-threaded for a decade when multicore was everywhere. The honest answer involves how much of the latency budget is syscall/network vs. the command — worth checking the I/O threading discussion in Redis 6.
+3. **&quot;It turned out lots of problems are shaped like that.&quot;** That&#x27;s a &quot;somehow.&quot; Which problems, and why did *these* five structures cover them? Closing it: look at the earliest feature requests to see whether sorted sets were pulled in by users or pushed by design.</pre></div>
+<div class="done">✻ Done in 1m 1s</div>
+</section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.7/marked.min.js"></script>
+<script>
+  if (window.marked) {
+    const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    marked.use({ gfm: true, renderer: { html: t => esc(typeof t === "string" ? t : t.text) } });
+    document.querySelectorAll(".md").forEach(el => {
+      el.innerHTML = marked.parse(el.querySelector("pre.raw").textContent);
+    });
+  }
+</script>
+</body>
+</html>
