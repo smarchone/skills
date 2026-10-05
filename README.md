@@ -34,6 +34,7 @@ Studying a technology, company, or system the way a senior engineer would.
 
 - **[origin-story](systems/origin-story/SKILL.md)**: Tell the origin story of a technology, company, or idea.
 - **[evolve](systems/evolve/SKILL.md)**: Trace how a company or system evolved, business and tech, with each architecture shift as a before → after picture.
+- **[rebuild](systems/rebuild/SKILL.md)**: Rebuild a system from scratch in stages, each forced by the last one's failure, showing what it looks like and how it operates.
 - **[adoption](systems/adoption/SKILL.md)**: Show how a tool or system is used across companies, grouped by usage pattern, how it fits each backend, and who moved off it.
 - **[build-vs-buy](systems/build-vs-buy/SKILL.md)**: Evaluate build vs. buy trade-offs: unit economics, engineering opportunity cost, scale break-even points, and migration architecture.
 
