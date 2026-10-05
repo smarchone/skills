@@ -30,6 +30,16 @@
     .back { display:inline-block; color:var(--accent); font-size:1.15em; font-weight:600; text-decoration:none; margin:0 0 12px; }
     .back:hover { text-decoration:underline; }
     .back.bottom { margin:24px 0 0; }
+    .minimap { display:none; position:fixed; top:24px; right:16px; width:180px; max-height:calc(100vh - 48px); overflow-y:auto; opacity:.35; transition:opacity .2s; font:11px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    @media (min-width:1340px) { .minimap { display:block; } }
+    .minimap a { display:block; color:var(--dim); text-decoration:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:1px 0; }
+    .minimap:hover { opacity:1; }
+    .minimap a.p { margin-top:8px; }
+    .minimap a.h2 { padding-left:8px; }
+    .minimap a.h3 { padding-left:16px; }
+    .minimap a.on { color:var(--fg); }
+    .minimap a:hover { color:var(--accent); }
+    [id^="mm-"] { scroll-margin-top:16px; }
   </style>
 </head>
 <body>
@@ -339,6 +349,40 @@ disk holds a full hot object                fastest k shards, ignoring hot strag
       el.innerHTML = marked.parse(el.querySelector("pre.raw").textContent);
     });
   }
+</script>
+<script>
+  (() => {
+    const items = [];
+    document.querySelectorAll(".turn").forEach(t => {
+      const p = t.querySelector(".prompt");
+      if (p) items.push({ el: p, cls: "p", text: (p.querySelector("summary") || p).textContent.replace(/^❯\s*/, "").split("\n")[0] });
+      t.querySelectorAll(".md h1, .md h2, .md h3").forEach(h => items.push({ el: h, cls: h.tagName.toLowerCase(), text: h.textContent }));
+    });
+    if (items.length < 2) return;
+    const nav = document.createElement("nav");
+    nav.className = "minimap";
+    const links = items.map((it, i) => {
+      it.el.id ||= "mm-" + i;
+      const a = document.createElement("a");
+      a.href = "#" + it.el.id;
+      a.className = it.cls;
+      a.textContent = a.title = it.text.trim();
+      nav.appendChild(a);
+      return a;
+    });
+    document.body.appendChild(nav);
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      let cur = 0;
+      items.forEach((it, i) => { if (it.el.getBoundingClientRect().top < 100) cur = i; });
+      links.forEach((a, i) => a.classList.toggle("on", i === cur));
+      const a = links[cur];
+      if (a.offsetTop < nav.scrollTop || a.offsetTop > nav.scrollTop + nav.clientHeight - 20) nav.scrollTop = a.offsetTop - nav.clientHeight / 2;
+    };
+    addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    update();
+  })();
 </script>
 </body>
 </html>
