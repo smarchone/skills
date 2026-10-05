@@ -8,8 +8,10 @@ Checkout examples https://smarchone.github.io/skills/.
 
 Start here. 
 
+- **[intuition-panel](productivity/intuition-panel/SKILL.md)**: Interactive panel discussing any topic (a council of a CEO, a PM and an Architect).
 - **[intuition](productivity/intuition/SKILL.md)**: Summarize any blog post or concept from multiple perspectives.
-- **[intuition-panel](productivity/intuition-panel/SKILL.md)**: Interactive panel discussion on any topic with a council of CEO, PM and an Architect.
+  - idea : Avoid asking the same questions again and again. use predefined format !
+
 
 ```sh
 npx skills add smarchone/skills/productivity/intuition
