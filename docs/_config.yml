@@ -1,0 +1,2 @@
+# Only the example pages are published; the tools stay in the repo.
+exclude: [tools, README.md]

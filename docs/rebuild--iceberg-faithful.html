@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rebuilding Iceberg (faithful)</title>
+  <style>
+    :root { --bg:#000; --fg:#e8e8e8; --dim:#8a8a8a; --accent:#d97757; --line:#333; --code:#141414; }
+    body { background:var(--bg); color:var(--fg); margin:0; padding:24px 16px; }
+    main { max-width:860px; margin:0 auto; font:14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    header { color:var(--dim); border:1px solid var(--line); border-radius:6px; padding:8px 12px; margin-bottom:24px; }
+    .turn { margin-bottom:32px; }
+    .prompt { background:#1c1c1c; padding:8px 12px; border-radius:6px; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .prompt summary { cursor:pointer; }
+    .dim { color:var(--dim); }
+    .md { overflow-wrap:anywhere; }
+    .md pre.raw { white-space:pre-wrap; font:inherit; margin:16px 0; }
+    .md h1, .md h2, .md h3, .md h4 { font-size:1em; color:var(--accent); margin:1.4em 0 .4em; }
+    .md table { border-collapse:collapse; width:100%; margin:12px 0; display:block; overflow-x:auto; }
+    .md th, .md td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+    .md th { background:#141414; }
+    .md code { background:var(--code); padding:1px 4px; border-radius:3px; }
+    .md pre { background:var(--code); padding:10px 12px; border-radius:6px; overflow-x:auto; }
+    .md pre code { background:none; padding:0; }
+    .md a { color:var(--accent); }
+    .md hr { border:0; border-top:1px solid var(--line); }
+    .tool { color:var(--dim); margin:8px 0; }
+    .tool pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:320px; overflow:auto; background:var(--code); padding:8px; }
+    .done { color:var(--dim); margin-top:12px; }
+    .back { display:inline-block; color:var(--accent); font-size:1.15em; font-weight:600; text-decoration:none; margin:0 0 12px; }
+    .back:hover { text-decoration:underline; }
+    .back.bottom { margin:24px 0 0; }
+  </style>
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← Examples</a>
+<header><div>Claude Code</div><div>claude-opus-5-5</div></header>
+<section class="turn"><div class="prompt">❯ /rebuild iceberg faithful</div>
+<div class="md"><pre class="raw"># Rebuilding Apache Iceberg from scratch
+An open table format: turns immutable files on object storage into a transactional, evolvable table · end state: Iceberg format v3 + REST catalog · mode: faithful · 11 stages (0–10)
+
+## Target
+- **Requirements:**
+  - **R1 Read less:** a query reads only the columns and row ranges it needs.
+  - **R2 Plan in O(1)-ish remote calls:** planning cost doesn&#x27;t grow with the number of files or partitions.
+  - **R3 Atomic commits:** a multi-file write appears all at once or not at all; readers never see half of it.
+  - **R4 Concurrent writers:** several jobs commit to the same table without lost updates.
+  - **R5 Snapshot isolation + time travel:** a reader sees one consistent version; older versions stay queryable for a while.
+  - **R6 Safe schema evolution:** add, drop, rename, reorder columns without rewriting data or resurrecting old values.
+  - **R7 Hidden, evolvable partitioning:** users filter on real columns; the layout can change without rewriting the table.
+  - **R8 Row-level deletes:** delete a handful of rows without rewriting terabytes.
+  - **R9 Bounded cost over time:** small files, old snapshots, and orphaned files get cleaned up.
+  - **R10 Engine-neutral commits:** Spark, Trino, Flink, and Python commit through one protocol the catalog can validate.
+- **Workload:** one `events` table, 20 columns, ~200M events/day. Raw JSON ~250 B/event → 50 GB/day; as Parquet+zstd ~10 GB/day *(5× is an estimate)*.
+  Writer A: streaming job, commits every 5 min with 4 tasks → **4 files/commit, 1,152 files/day, ~8.7 MB each**. Writer B: hourly late-data corrections. Writer C: nightly GDPR job, ~50 user deletions/day.
+  Readers: ~500 analyst queries/day, typically *last 7 days, `event_type = &#x27;purchase&#x27;`, 3 of 20 columns*. Retention 2 years → 730 days → **841K files, 7.3 TB** if never compacted.
+  S3 rules of thumb *(estimates)*: LIST returns ≤1,000 keys/call at ~50 ms; GET first byte ~30 ms; ~100 MB/s per stream.
+
+## Roadmap
+JSON in a folder → Parquet → Hive partitions + metastore → explicit file list → catalog pointer swap → manifest tree → field IDs → hidden partitioning → compaction &amp; expiry → deletion vectors → REST catalog
+
+## Overview (simulated)
+**Dev:** I need a table on S3. 200M events a day, a few writers, analysts on top. Honestly, why isn&#x27;t &quot;a folder of JSON files&quot; enough?
+
+**Vet:** Let&#x27;s find out. An analyst wants last week&#x27;s purchases. What does the engine do first?
+
+**Dev:** List the folder, read the files.
+
+**Vet:** After two years that folder holds 841K files. LIST gives you 1,000 keys per call, one page after another. How long?
+
+**Dev:** 841 calls × 50 ms… 42 seconds before reading a byte. And then it reads everything, because nothing says which file holds last week.
+
+**Vet:** 36 TB of JSON to answer a 7-day question. So you have two separate problems: reading too much *inside* files, and finding *which* files. Which is easier?
+
+**Dev:** Inside files. Columnar format, so I read 3 columns, not 20. (→ Stage 1)
+
+**Vet:** Right, and Parquet gives you something else for free: min/max stats per column in the footer. Watch for this in Stage 1: the stats let you skip a file, but only after you&#x27;ve opened it. You still pay one request per file.
+
+**Dev:** Then I&#x27;ll put each day in its own folder. `dt=2026-10-05/`. List 7 folders, done. (→ Stage 2)
+
+**Vet:** That&#x27;s Hive, and it got the industry a decade. Planning goes from 42 s to about a second. Now the streaming job writes 4 files per commit. A query lists the folder after file 2 lands. What does it see?
+
+**Dev:** Half a commit. Hm. A lock file? Writers create `_LOCK`, readers wait.
+
+**Vet:** On S3, two writers can both &quot;create&quot; `_LOCK`: a plain PUT just overwrites. And readers waiting on writers is exactly what you don&#x27;t want at 500 queries a day. Also: Hive &quot;commits&quot; by renaming a staging folder. What&#x27;s a rename on S3?
+
+**Dev:** …I assumed atomic.
+
+**Vet:** That&#x27;s the misconception to drop. S3 has no rename: it&#x27;s copy every object, then delete. 10 GB of copying, visible one object at a time. Keep that in mind; Stage 2&#x27;s failure table is mostly that.
+
+**Dev:** So stop deriving the table from the folder. Write down which files are in it. (→ Stage 3)
+
+**Vet:** Yes. That&#x27;s the single biggest idea in Iceberg: *the table is a list of files, not a directory*. A file isn&#x27;t in the table until a metadata file says so. Now how do readers find the latest list?
+
+**Dev:** Number them. `v13.metadata.json`. Newest number wins.
+
+**Vet:** Two writers both read v12 and both write v13. On HDFS, rename-if-absent saves you. On S3?
+
+**Dev:** Last PUT wins. Writer A&#x27;s 4 files silently vanish from the table. That&#x27;s worse than half-visible.
+
+**Vet:** Silent data loss. The spec itself calls this scheme unsafe. So what&#x27;s the smallest thing that gives you &quot;only if it&#x27;s still v12&quot;?
+
+**Dev:** A compare-and-swap somewhere. A database row holding the pointer. (→ Stage 4)
+
+**Vet:** Exactly: the catalog holds one pointer per table and swaps it atomically. Everything else lives in S3. Think git: commits are immutable objects, the branch ref is the only mutable thing, and pushing is a compare-and-swap on the ref. Where the analogy breaks: when Iceberg loses the race it doesn&#x27;t merge, it *re-applies its operation* on the new version. Watch in Stage 4 which operations can be safely re-applied and which must give up.
+
+**Dev:** Checkpoint, let me say it back. Columnar files for reading less. A metadata file listing every file plus stats, so planning is one GET instead of thousands of LISTs. A catalog CAS on a pointer to that file for atomic commits.
+
+**Vet:** Good. Now the cost. After two years, how big is that list, with stats for 20 columns?
+
+**Dev:** ~1 KB per file × 841K… 841 MB. Rewritten every 5 minutes?
+
+**Vet:** 288 times a day, plus every retry. 242 TB/day of metadata writes, and every planner downloads 841 MB. What would you do?
+
+**Dev:** Shard it. Only rewrite the shard that changed. (→ Stage 5)
+
+**Vet:** That&#x27;s the manifest tree. Think B-tree: the snapshot&#x27;s manifest list is the root, manifests are leaves, and unchanged leaves are shared between versions. Where it breaks: the leaves aren&#x27;t sorted by key. Pruning works by *stats on each leaf*, not by key ranges. In Stage 5, notice that an append writes three files but only one is &quot;new data&quot;: the rest is the path from a new root down to it.
+
+**Dev:** And schemas? Parquet matches columns by name.
+
+**Vet:** Then try this: you drop the `ip` column for privacy. A year later someone adds a new `ip` column holding a hash. What do old files return?
+
+**Dev:** The raw IPs. By name, it&#x27;s the same column. Oh no. Give each column a permanent ID. (→ Stage 6)
+
+**Vet:** And partitions: your `dt` column is computed by every writer. One writer uses local time, 8 hours of events land in the wrong day, and analysts filtering on `event_ts` get no pruning unless they also remember to filter `dt`. (→ Stage 7) Watch for the inversion: the table stores *how* to derive the partition, and the planner turns `event_ts` filters into partition filters for you.
+
+**Dev:** Checkpoint two. The table is a tree of immutable files under one swappable pointer; columns and partitions are identified by IDs and transforms, not names and folders.
+
+**Vet:** Sharper version: *all identity lives in metadata, nothing is inferred from paths or names.* Now, the streaming job writes 8.7 MB files. Fine?
+
+**Dev:** A 7-day query opens 8,064 files. Compact them into big ones. (→ Stage 8)
+
+**Vet:** And deleting old snapshots doesn&#x27;t free space by itself: which files can you actually delete, and when? Stage 8 is also where people corrupt tables, by running orphan cleanup with too short a window.
+
+**Dev:** Last one: GDPR. Delete one user&#x27;s rows.
+
+**Vet:** With 512 MB compacted files and the user in one file per day, how much do you rewrite?
+
+**Dev:** 730 files × 512 MB, ~365 GB per request. And 50 requests batched nightly touch basically every file: rewrite the whole 7.3 TB.
+
+**Vet:** So don&#x27;t rewrite. Record *which rows are dead*. (→ Stage 9) The subtle part there is time: a delete must only hide rows that existed when it was written. Watch how sequence numbers decide that.
+
+**Dev:** And Stage 10?
+
+**Vet:** Today every engine implements the commit protocol itself against a metastore over Thrift, with write access to the whole bucket. One buggy client can revert the pointer. Stage 10 moves the commit behind an HTTP API: the client says &quot;if main is still at snapshot X, add snapshot Y&quot;, and the server checks it.
+
+**Dev:** So the chain: listing is slow → columnar + stats; finding files is slow → partitions; folders aren&#x27;t atomic → explicit file list; S3 can&#x27;t CAS → catalog pointer; the list is huge → manifest tree; names and folders lie → IDs and transforms; small files and old snapshots pile up → maintenance; rewrites are too expensive → deletion vectors; every engine re-implements commits → REST.
+
+**Vet:** And the one idea it all rests on: **immutable files, plus one atomically swapped pointer to an immutable tree describing them.**
+
+---
+
+## Stage 0 · JSON in a folder
+**Breaks because:** nothing yet: the simplest thing that could work.
+
+**Looks like:**
+```
+s3://lake/events/
+  2026-10-05T10-05-00_task0.json     # ~43 MB, one JSON object per line
+  2026-10-05T10-05-00_task1.json
+  ...                                # 1,152 new files/day
+```
+**Operates like:**
+1. Write: each task PUTs one JSON-lines file. 4 PUTs per 5-minute batch.
+2. Read &quot;last 7 days of purchases&quot;: `LIST s3://lake/events/` page by page: 841K keys ÷ 1,000 = **841 calls × 50 ms ≈ 42 s**, sequential (each page needs the previous page&#x27;s continuation token).
+3. GET and parse every file: nothing tells the reader which file holds which day. **36.5 TB of JSON** for a 7-day question.
+
+**Failure modes:**
+| What fails | What happens | How the real system handles it |
+|---|---|---|
+| Writer crashes mid-upload | Nothing visible: an S3 PUT (or multipart upload) is all-or-nothing per object | Same property Iceberg relies on: files are written once, in place, never modified |
+| Two files with different field types (`&quot;price&quot;: &quot;9.99&quot;` vs `9.99`) | Reader errors or silently coerces | Typed schema in metadata (Stage 1/6) |
+| Reader lists while 2 of 4 files are written | Sees half a batch | Explicit commit (Stage 3) |
+
+**Simplified:** real JSON pipelines often bucket filenames by time and use name-based tricks; there&#x27;s no contract making that safe.
+**Real name:** none: the &quot;data swamp&quot; Iceberg was built to replace.
+**Earns:** nothing yet · **Costs:** every query reads everything.
+
+## Stage 1 · Parquet (columnar files with stats)
+**Breaks because:** a query needing 3 of 20 columns reads and parses all 20; 36.5 TB scanned for 7 days.
+&gt; **Pause:** You can change the file format but not the folder. What can a file tell a reader *before* it reads the data?
+
+**Looks like:**
+```
+s3://lake/events/
++ 2026-10-05T10-05-00_task0.parquet   # ~8.7 MB
+
+part-…parquet
+  ┌ row group 0 (rows 0..N)
+  │   column chunk event_id   (zstd pages)
+  │   column chunk event_ts
+  │   column chunk event_type
+  │   … 17 more
+  ├ row group 1 …
+  └ footer: schema, row-group offsets, per-chunk stats {min, max, null_count}
+    + 4-byte footer length + &quot;PAR1&quot;
+```
+**Operates like:**
+1. Write: the task buffers rows, writes column chunks per row group, then the footer last. One PUT.
+2. Read: still **841 LIST calls** to find files.
+3. Per file: one ranged GET for the tail (footer), check `event_ts` min/max against the 7-day range. 841K footer GETs × 30 ms ÷ 256 parallel ≈ **99 s**.
+4. For the 8,064 files that match: ranged GETs for only `event_ts`, `event_type`, `user_id` chunks. Bytes read ≈ 7 days × 10 GB × 3/20 ≈ **10.5 GB** (vs 36.5 TB).
+
+**Failure modes:**
+| What fails | What happens | How the real system handles it |
+|---|---|---|
+| Writer adds a column; old files lack it | Reader matches by name, returns null for old files: fine. But a *rename* looks like drop+add | Field IDs stored in Parquet&#x27;s `field_id` (Stage 6) |
+| Footer stats missing or truncated (long strings) | No pruning for that column | Iceberg copies bounds into its own metadata (`lower_bounds`/`upper_bounds`) and can truncate them safely |
+| Many tiny files from streaming | Footer GET overhead dominates | Compaction (Stage 8) |
+
+**Simplified:** row-group sizing (Iceberg&#x27;s default target is 128 MB per row group) and page indexes are skipped.
+**Real name:** Apache Parquet. Iceberg also supports ORC and Avro as data formats; manifests themselves are Avro.
+**Earns:** R1 · **Costs:** finding files is still O(files): 841 LISTs + 841K footer GETs before reading a byte of data.
+
+## Stage 2 · Hive partitions + metastore
+**Breaks because:** planning cost is O(all files in the table): ~140 s of listing and footer reads per query.
+&gt; **Pause:** Most queries filter by day. How could the *layout* let a reader skip 723 of 730 days without opening them?
+
+**Looks like:**
+```
+s3://lake/events/
++ dt=2026-10-04/
++   part-00000-….parquet  …  (1,152 files)
++ dt=2026-10-05/
++   part-00000-….parquet
+
+Hive Metastore (MySQL/Postgres behind a Thrift service)
++ TBLS        events → location s3://lake/events, schema, partition keys (dt string)
++ PARTITIONS  events/dt=2026-10-05 → s3://lake/events/dt=2026-10-05/   (730 rows)
+```
+**Operates like:**
+1. Write (streaming): tasks write files into `dt=…/` (in classic Hive: into a `_temporary/` staging dir, then rename into place); first write of a day → `add_partition` in the metastore.
+2. Read: engine requires `WHERE dt &gt;= &#x27;2026-09-29&#x27;`; asks the metastore for matching partitions → 7 locations.
+3. LIST 7 prefixes × 2 pages = **14 LIST calls**; 8,064 footer GETs ÷ 256 parallel ≈ **1 s**. Planning ~2 s instead of ~140 s.
+4. Correction job: `INSERT OVERWRITE … PARTITION (dt=&#x27;2026-10-01&#x27;)` deletes the day&#x27;s files, writes new ones.
+
+**Failure modes:**
+| What fails | What happens | How the real system handles it |
+|---|---|---|
+| Reader lists while the streaming job is mid-batch | Sees 2 of 4 files: counts are wrong, no error | Files are invisible until a commit lists them (Stage 3) |
+| `INSERT OVERWRITE` of a day | Window where the day is empty or half old/half new | Overwrite = one atomic commit that removes old files and adds new ones |
+| Commit by renaming `_temporary/` on S3 | &quot;Rename&quot; = COPY + DELETE per object: minutes for 10 GB, visible piecemeal, and a crash leaves a mix | Iceberg never renames data; files are written in place and referenced |
+| S3 LIST before Dec 2020 | Eventually consistent: a just-written file could be missing from LIST | Iceberg never LISTs to plan; S3 has been strongly consistent since 1 Dec 2020 |
+| Analyst filters `event_ts` but forgets `dt` | Full scan of 730 partitions | Hidden partitioning (Stage 7) |
+| Writer computes `dt` in local time | 8 h of events in the wrong partition, silently | Partition derived by a declared transform (Stage 7) |
+| Thousands of tables × hourly partitions | Metastore holds millions of partition rows; planning hammers one database | Partition info moves into files in S3 (Stage 5) |
+
+**Simplified:** Hive ACID tables (ORC + delta directories + metastore transactions) are left out; they solved some of this, mostly for Hive itself.
+**Real name:** the Hive table layout and the Hive Metastore (HMS): the status quo Iceberg was created at Netflix to replace (~2017–18).
+**Earns:** R2 partially (planning is O(partitions touched), not O(table)) · **Costs:**
+- No atomicity or isolation: the table *is* whatever LIST returns right now.
+- Partitioning is a user-maintained column, and still O(files in each partition) to list.
+
+## Stage 3 · An explicit file list (a table is a list, not a directory)
+**Breaks because:**
+- Readers see half-written batches and half-overwritten days.
+- On S3, &quot;commit by rename&quot; is neither atomic nor fast.
+&gt; **Pause:** S3 has no multi-object transaction. What *single* operation can make 4 files appear at once?
+
+**Looks like:**
+```
+s3://lake/events/
+  data/dt=2026-10-05/00000-….parquet          # data files, written in place, never renamed
++ metadata/
++   v12.metadata.json
++   v13.metadata.json                         # the table = whatever the newest version lists
++   version-hint.text                         # &quot;13&quot;
+
+v13.metadata.json  (toy shape)
+{
+  &quot;format-version&quot;: 1,
+  &quot;location&quot;: &quot;s3://lake/events&quot;,
+  &quot;schema&quot;: {…},
+  &quot;files&quot;: [
+    {&quot;file_path&quot;: &quot;s3://lake/events/data/dt=2026-10-05/00000-….parquet&quot;,
+     &quot;partition&quot;: {&quot;dt&quot;: &quot;2026-10-05&quot;}, &quot;record_count&quot;: 174000, &quot;file_size_in_bytes&quot;: 9120000,
+     &quot;lower_bounds&quot;: {&quot;event_ts&quot;: &quot;…&quot;}, &quot;upper_bounds&quot;: {&quot;event_ts&quot;: &quot;…&quot;}},
+    … 841K entries
+  ]
+}
+```
+**Operates like:**
+1. Write: tasks PUT data files (invisible: nothing references them yet).
+2. Commit: read v12, add 4 entries, write `v13.metadata.json`, update `version-hint.text`.
+3. Read: GET `version-hint.text` → GET `v13.metadata.json` → filter entries by `dt` and `event_ts` bounds in memory. **Zero LISTs, no footer GETs to plan.**
+4. Overwrite of a day: one new version that drops 1,152 entries and adds the new files: atomic, because one object flips.
+5. Time travel: read `v12.metadata.json`. Old versions are still there.
+6. **Failure path (concurrent commit on S3):** Writer A and the correction job both read v12, both PUT `v13.metadata.json`. S3 accepts both PUTs; the last one wins. Writer A&#x27;s 4 files are **no longer in the table**, with no error. (On HDFS, writing to a temp file and then `rename(tmp, v13)` fails if v13 exists, so the loser retries.)
+
+**Failure modes:**
+| What fails | What happens | How the real system handles it |
+|---|---|---|
+| Two writers commit the same version on S3 | Lost update: one commit silently disappears | The spec marks this file-system scheme **deprecated and unsafe on object stores**; use a catalog CAS (Stage 4) |
+| Writer crashes after writing data files, before commit | Files exist but are in no version: invisible, but cost storage | Orphan-file cleanup (Stage 8) |
+| `version-hint.text` stale or missing | Reader picks an old version or LISTs `metadata/` | Again: a catalog holds the pointer |
+
+**Simplified:** real v1 metadata never inlined the file list; this flat list is a teaching step (see Real vs rebuilt).
+**Real name:** table metadata file + file-system tables (`HadoopTableOperations`, `v&lt;V&gt;.metadata.json`).
+**Earns:** R3 (on HDFS), R5, R2 for small tables · **Costs:**
+- Unsafe concurrent commits on S3.
+- The list is O(files): ~1 KB/entry with stats *(estimate)* → 35 MB after 30 days, **841 MB after 2 years**, rewritten on every commit.
+
+## Stage 4 · Atomic pointer swap in a catalog + optimistic retries
+**Breaks because:** two writers on S3 can both write &quot;version 13&quot;; one silently loses.
+&gt; **Pause:** You need &quot;make v13 current *only if* v12 is still current&quot;. Where can you get that one primitive, if S3 won&#x27;t give it to you?
+
+**Looks like:**
+```
+metadata/
+  00012-3f1c….metadata.json
++ 00013-a9b2….metadata.json        # unique name: never overwritten, so writers can&#x27;t collide
+
+Hive Metastore, table &quot;events&quot;
+  table_type                  = ICEBERG
++ metadata_location           = s3://lake/events/metadata/00013-a9b2….metadata.json
++ previous_metadata_location  = s3://lake/events/metadata/00012-3f1c….metadata.json
+
+Table properties (defaults)
+  commit.retry.num-retries = 4      commit.retry.min-wait-ms = 100
+  commit.retry.max-wait-ms = 60000  commit.retry.total-timeout-ms = 1800000
+  commit.status-check.num-retries = 3
+```
+**Operates like:**
+1. Write data files (as before).
+2. Write `00013-&lt;uuid&gt;.metadata.json` based on v12: a unique name, so this PUT never clobbers anything.
+3. Swap: the Hive catalog takes a metastore lock on the table, checks `metadata_location` still equals v12&#x27;s location, sets it to v13, releases the lock. That check-and-put is the commit.
+4. **Failure path (lost race):** check fails, someone committed v13&#x27; first. Writer refreshes, **re-applies its operation** on v13&#x27;, writes `00014-&lt;uuid&gt;.metadata.json`, retries the swap; up to 4 retries with backoff from 100 ms to 60 s.
+5. Whether re-applying is allowed depends on the operation:
+   - **Append:** always applicable. The streaming job never loses to anyone.
+   - **Replace / delete-by-file** (compaction, overwrite of specific files): only if every file it removes is still in the table; otherwise fail.
+   - **Delete by expression** (`event_ts &lt; X`): always applicable.
+   - **Schema or partition-spec change:** only if the schema hasn&#x27;t changed since the base.
+6. **Failure path (unknown outcome):** the metastore call times out *after* the swap may have happened. Retrying blindly could double-commit, giving up could drop a successful commit. The client reloads the table and checks whether its metadata location is current or in the history; if it still can&#x27;t tell, it raises `CommitStateUnknownException` and does **not** clean up its files.
+
+**Failure modes:**
+| What fails | What happens | How the real system handles it |
+|---|---|---|
+| Concurrent append vs append | Loser retries; always succeeds | Appends re-apply unconditionally |
+| Compaction vs overwrite of the same day | Compaction&#x27;s input files are gone | Validation fails; compaction aborts (its rewritten files become orphans) |
+| Network drop after the swap | Client doesn&#x27;t know if it committed | Status check against current/previous locations, else `CommitStateUnknownException` |
+| Another tool calls `alter_table` with a stale table object | Can overwrite `metadata_location` with an old value, rolling the table back | Lock all Iceberg pointer changes the same way (HIVE-26576); ultimately, move commits behind a validating API (Stage 10) |
+| Client dies holding the metastore lock | Other writers block until the lock times out | Lock heartbeats/timeouts in the metastore *(timeouts vary by deployment, unverified)* |
+| Old metadata files pile up (one per commit) | 288+/day | `write.metadata.previous-versions-max = 100`, `write.metadata.delete-after-commit.enabled` (default false) |
+
+**Real name:** metastore tables (`BaseMetastoreTableOperations`, `HiveTableOperations`), file naming `&lt;V&gt;-&lt;uuid&gt;.metadata.json`; optimistic concurrency.
+**Earns:** R3 and R4 on S3 · **Costs:**
+- Every commit and every retry rewrites the full list: 841 MB × 288 commits/day ≈ **242 TB/day** of metadata writes; ~8 s just to upload it at 100 MB/s, which widens the race window.
+- Every query downloads and parses 841 MB to plan.
+
+## Stage 5 · The manifest tree: snapshot → manifest list → manifests
+**Breaks because:** the file list is O(table) and rewritten on every commit (and every retry).
+&gt; **Pause:** A commit adds 4 entries to an 841K-entry list. How would you structure the list so a commit writes ~4 entries&#x27; worth of bytes, and a planner reads only the parts that might match?
+
+**Looks like:**
+```
+metadata/
+  00513-….metadata.json                       # small: schemas, specs, snapshot list, refs
++ snap-6914…-1-7c0d….avro                     # manifest list for snapshot 6914… (one per commit attempt)
++ 7c0d…-m0.avro                               # manifest: this commit&#x27;s 4 new files
+  31aa…-m0.avro                               # older manifests, reused untouched
+  …
+
+metadata.json (excerpt, real field names)
+{
+  &quot;format-version&quot;: 2, &quot;table-uuid&quot;: &quot;…&quot;, &quot;location&quot;: &quot;s3://lake/events&quot;,
+  &quot;last-sequence-number&quot;: 513, &quot;last-column-id&quot;: 20,
+  &quot;current-snapshot-id&quot;: 6914…,
+  &quot;refs&quot;: {&quot;main&quot;: {&quot;snapshot-id&quot;: 6914…, &quot;type&quot;: &quot;branch&quot;}},
+  &quot;snapshots&quot;: [
+    {&quot;snapshot-id&quot;: 6914…, &quot;parent-snapshot-id&quot;: 6913…, &quot;sequence-number&quot;: 513,
+     &quot;timestamp-ms&quot;: 1791201900000,
+     &quot;manifest-list&quot;: &quot;s3://lake/events/metadata/snap-6914…-1-7c0d….avro&quot;,
+     &quot;summary&quot;: {&quot;operation&quot;: &quot;append&quot;, &quot;added-data-files&quot;: &quot;4&quot;}}, …]
+}
+
+manifest list entry (manifest_file)            manifest entry (manifest_entry → data_file)
+  manifest_path, manifest_length                 status: 1 (ADDED) | 0 (EXISTING) | 2 (DELETED)
+  partition_spec_id, content: 0 (data)           snapshot_id, sequence_number (null → inherited)
+  sequence_number, min_sequence_number           data_file: content, file_path, file_format,
+  added_files_count, existing_files_count …        partition {…}, record_count, file_size_in_bytes,
+  partitions: [{contains_null,                     value_counts, null_value_counts,
+                lower_bound, upper_bound}]         lower_bounds, upper_bounds, split_offsets
+```
+**Operates like:**
+1. Append (fast append): write **one manifest** with 4 entries (~2 KB), a **new manifest list** referencing it plus all existing manifests (~150 entries, ~30 KB *(estimate)*), and a **new metadata.json** (~0.6 MB with 5 days of snapshots *(estimate)*). Swap the pointer. ~0.65 MB per commit instead of 841 MB.
+2. Manifest merging: once there are ≥100 small manifests (`commit.manifest.min-count-to-merge`), the next append also merges them into ~8 MB manifests (`commit.manifest.target-size-bytes`). 841K entries settle into ~50 merged manifests plus &lt;100 recent small ones.
+3. Plan &quot;last 7 days&quot;: GET metadata.json → GET manifest list → skip every manifest whose `partitions` bounds miss the date range (data arrives in time order, so old manifests cover old days) → GET the ~1–2 merged manifests and the recent small ones, in parallel → filter entries by `event_ts` bounds → 8,064 files. Roughly **a few hundred ms**, independent of table age.
+4. **Failure path (retry):** the commit loses the race. New manifests stored `null` sequence numbers, so they&#x27;re **reused as-is**; only the manifest list (which carries the new sequence number) and metadata.json are rewritten. A retry costs ~0.65 MB, not a rewrite of the data&#x27;s metadata.
+5. **Failure path (crash before swap):** the manifest and manifest list exist but no metadata references them. Readers never see them; they&#x27;re orphans (Stage 8).
+
+**Failure modes:**
+| What fails | What happens | How the real system handles it |
+|---|---|---|
+| Retry after losing a race | Must re-number the snapshot | Sequence-number inheritance: rewrite only the manifest list |
+| Same data file in two live manifest entries | Undefined behavior: duplicates in scans | Spec forbids it (&quot;content file uniqueness&quot;); writers must not produce it, readers may error |
+| Thousands of tiny manifests (merging disabled for fast streaming commits) | Planning reads thousands of manifests | Manifest merging, or `rewrite_manifests` maintenance |
+| Snapshot list in metadata.json grows forever | metadata.json gets large, slow to write | Snapshot expiry (Stage 8) |
+
+**Real name:** snapshots, manifest lists, manifests (Avro), fast append vs merge append, sequence numbers.
+**Earns:** R2 fully, R4 cheaply (retries are cheap), R5 (each snapshot is a full, immutable tree) · **Costs:**
+- Every reader/writer must agree on what columns *are*: stats are keyed by column, and renames break that (→ Stage 6).
+- Partitioning is still a user-written `dt` string.
+
+## Stage 6 · Column IDs (schema evolution that can&#x27;t resurrect data)
+**Breaks because:**
+- Rename `payload` → `props` and old files&#x27; `payload` data disappears under name matching.
+- Drop `ip` for privacy, later add a new `ip` (a hash): name matching returns the **old raw IPs** from 2-year-old files.
+&gt; **Pause:** Old files are immutable and can&#x27;t be rewritten cheaply. How can a reader know that the `ip` in a 2024 file is *not* the `ip` in today&#x27;s schema?
+
+**Looks like:**
+```
+metadata.json
+  &quot;last-column-id&quot;: 21,
+  &quot;current-schema-id&quot;: 3,
+  &quot;schemas&quot;: [
+    {&quot;schema-id&quot;: 2, &quot;fields&quot;: [ {&quot;id&quot;: 1, &quot;name&quot;: &quot;event_id&quot;, &quot;type&quot;: &quot;string&quot;, &quot;required&quot;: true},
+                                 {&quot;id&quot;: 2, &quot;name&quot;: &quot;event_ts&quot;, &quot;type&quot;: &quot;timestamptz&quot;, …},
+                                 {&quot;id&quot;: 7, &quot;name&quot;: &quot;ip&quot;, &quot;type&quot;: &quot;string&quot;, …}, … ]},
+    {&quot;schema-id&quot;: 3, &quot;fields&quot;: [ …,
++                                {&quot;id&quot;: 21, &quot;name&quot;: &quot;ip&quot;, &quot;type&quot;: &quot;string&quot;, &quot;required&quot;: false} ]}  # new ID, not 7
+  ]
+
+Parquet file schema (written by Iceberg)
+  required binary event_id (STRING) = 1;      # &quot;= 1&quot; is the Parquet field_id
+  optional binary ip (STRING) = 7;
+
+manifest data_file
+  lower_bounds: {2: &lt;bytes&gt;, 7: &lt;bytes&gt;, …}   # stats keyed by field ID, not name
+```
+**Operates like:**
+1. Rename `payload` → `props`: new schema with the same ID; **no data touched**. Old files&#x27; column ID 9 is still read as `props`.
+2. Drop `ip` (ID 7), add `ip` (ID 21): `last-column-id` 20 → 21. Readers project by ID: old files have no ID 21 → **null**. The raw IPs stay unreadable through the table.
+3. Type promotion: `int` → `long`, `float` → `double`, widen decimal precision. Old files keep 4-byte bounds; readers infer the original type from the bound&#x27;s length.
+4. **Failure path:** a schema change commits while a writer is mid-job on the old schema. The writer&#x27;s commit is validated (`assert-current-schema-id` in REST terms, schema-unchanged check in general) and fails if the schema moved.
+
+**Failure modes:**
+| What fails | What happens | How the real system handles it |
+|---|---|---|
+| Files written by a non-Iceberg tool (no field IDs) are imported | Reader can&#x27;t match columns | Name mapping (`schema.name-mapping.default`) maps names → IDs for those files |
+| Unsafe promotion (`int` → `string`) | Bounds, partition values, and comparisons break | Only listed promotions allowed; promotions that change a partition transform&#x27;s output are refused |
+| Field IDs reused after a drop | Old data resurrected | `last-column-id` only ever grows |
+| Field ID ≥ 2147483447 | Collides with metadata columns (`_file`, `_pos`, …) | Reserved range, rejected |
+
+**Simplified:** v3 default values (`initial-default` / `write-default`) and nested-type rules are skipped.
+**Real name:** field IDs, schema evolution, column projection.
+**Earns:** R6 · **Costs:** partitions are still a separate, user-computed `dt` column.
+
+## Stage 7 · Hidden partitioning and partition evolution
+**Breaks because:**
+- `dt` is computed by each writer: one used local time, and 8 hours of events landed in the wrong day without anyone noticing.
+- Analysts filtering `event_ts` but not `dt` scan all 730 days.
+- Volume grows 10× next year; switching to hourly partitions would mean rewriting 7.3 TB, and every query that mentions `dt` changes.
+&gt; **Pause:** What if the table stored not the partition *value*, but the *function* that produces it from a real column?
+
+**Looks like:**
+```
+metadata.json
+  &quot;last-partition-id&quot;: 1001,
+  &quot;default-spec-id&quot;: 1,
+  &quot;partition-specs&quot;: [
+    {&quot;spec-id&quot;: 0, &quot;fields&quot;: [{&quot;source-id&quot;: 2, &quot;field-id&quot;: 1000, &quot;name&quot;: &quot;event_ts_day&quot;,  &quot;transform&quot;: &quot;day&quot;}]},
++   {&quot;spec-id&quot;: 1, &quot;fields&quot;: [{&quot;source-id&quot;: 2, &quot;field-id&quot;: 1001, &quot;name&quot;: &quot;event_ts_hour&quot;, &quot;transform&quot;: &quot;hour&quot;}]}
+  ]
+
+data/
+  event_ts_day=2026-10-04/…parquet              # old files: spec 0, stay where they are
++ event_ts_hour=2027-03-01-09/…parquet          # new files: spec 1
+
+manifest list
+  manifest A: partition_spec_id 0, partitions[0] bounds: 2026-10-01 … 2026-10-31
++ manifest B: partition_spec_id 1, partitions[0] bounds: 2027-03-01-00 … 2027-03-01-23
+```
+**Operates like:**
+1. Write: the writer computes `day(event_ts)` (or `hour(event_ts)`) per row from the spec: no user-written `dt` column. Iceberg still writes `event_ts` itself into the file.
+2. Read `WHERE event_ts &gt;= &#x27;2026-09-29 00:00&#x27;`: for each manifest, the planner projects the predicate through *that manifest&#x27;s* spec: `event_ts_day &gt;= day(&#x27;2026-09-29&#x27;)` for spec 0, `event_ts_hour &gt;= hour(…)` for spec 1. This is an **inclusive projection**: it may keep a few extra rows&#x27; files, never drops matching ones; the row filter runs afterwards.
+3. Evolution: commit spec 1 as default. **No data rewritten.** Old manifests keep spec 0; new ones use spec 1.
+4. Transforms available: `identity`, `bucket[N]` (Murmur3 x86 32-bit, seed 0: must be identical across engines), `truncate[W]`, `year`, `month`, `day`, `hour`, `void`.
+5. **Failure path:** a writer still on spec 0 commits after spec 1 became default. Its commit validates against the spec it was based on (`assert-default-spec-id` in REST); if the spec changed, it fails and must re-plan its partitioning.
+
+**Failure modes:**
+| What fails | What happens | How the real system handles it |
+|---|---|---|
+| Two engines hash `bucket[16](user_id)` differently | Same row lands in different buckets; pruning returns wrong results | Spec pins the hash (Murmur3 x86_32, seed 0) and the exact byte encoding per type |
+| Reader doesn&#x27;t know a newer transform | Can&#x27;t evaluate it | Unknown transforms are ignored for filtering (projection = true); writers may not commit with them |
+| Partition field IDs reused for a different field | Old manifests&#x27; partition tuples misread | `last-partition-id` only grows; equivalent fields must reuse IDs |
+| Promote a partition source column so the transform output changes | Old and new partition values disagree | That promotion is forbidden |
+
+**Real name:** partition specs, partition transforms, hidden partitioning, partition evolution.
+**Earns:** R7 · **Costs:** the 5-minute streaming commits still produce 1,152 files/day of ~8.7 MB, and every commit leaves a snapshot behind forever.
+
+## Stage 8 · Compaction, snapshot expiry, orphan cleanup
+**Breaks because:**
+- A 7-day query opens 8,064 small files: ~32K GETs (footer + 3 column chunks each).
+- metadata.json carries every snapshot ever made (288+/day); storage only grows, because a &quot;deleted&quot; file is still referenced by old snapshots.
+- Failed commits left unreferenced files nobody will ever read.
+&gt; **Pause:** Snapshot 500 removed file F. When is it actually safe to delete F from S3?
+
+**Looks like:**
+```
+Compaction commit (snapshot summary)
+  &quot;operation&quot;: &quot;replace&quot;,
+  &quot;deleted-data-files&quot;: &quot;1152&quot;, &quot;added-data-files&quot;: &quot;20&quot;      # one day: 8.7 MB × 1,152 → 512 MB × 20
+
+manifest entries after compaction
+  status 2 (DELETED)  data/event_ts_day=2026-10-04/00000-…  (one of 1,152)
++ status 1 (ADDED)    data/event_ts_day=2026-10-04/00000-…-compacted.parquet
+
+Table properties (defaults)
+  write.target-file-size-bytes          = 536870912   (512 MB)
+  history.expire.max-snapshot-age-ms    = 432000000   (5 days)
+  history.expire.min-snapshots-to-keep  = 1
+  remove_orphan_files older_than        = now - 3 days  (procedure default)
+```
+**Operates like:**
+1. Compaction (`rewrite_data_files`): read a day&#x27;s 1,152 files, write ~20 files of ~512 MB, commit a **replace**: same rows, different files. Readers on old snapshots keep reading old files.
+2. 7-day query afterwards: 140 files → ~140 footer GETs + column-chunk GETs ≈ **~2K GETs** instead of ~32K.
+3. Expire snapshots: drop snapshots older than 5 days (keeping at least 1 per branch); then delete files that were removed by an expired snapshot and aren&#x27;t referenced by any retained one. **Time travel now reaches back 5 days.**
+4. Orphan cleanup: LIST the table location, diff against every file reachable from metadata, delete unreferenced files **older than 3 days**.
+5. **Failure path (compaction vs concurrent writer):** the streaming job appends during compaction: no conflict (appends always apply). The correction job overwrites 2026-10-04 during compaction: compaction&#x27;s validation finds its input files gone and fails; its 20 new files become orphans.
+
+**Failure modes:**
+| What fails | What happens | How the real system handles it |
+|---|---|---|
+| Orphan cleanup with `older_than` = 1 hour | Deletes files of a commit that&#x27;s in flight; after it commits, the table references missing files (**corruption**) | Default window of 3 days; never shorten it below the longest possible write job |
+| Expiry too aggressive | Time travel and long-running readers on old snapshots break | `max-snapshot-age-ms`, `min-snapshots-to-keep`, per-branch/tag overrides |
+| Compaction loses to an overwrite | Wasted work, orphan files | Validation + retry on a smaller scope (per partition) |
+| Manifests still fragmented after compaction | Planning reads many manifests | `rewrite_manifests` |
+
+**Simplified:** delete-file compaction and z-order are skipped. Assume compaction also sorts each day by `user_id` (a sort-based rewrite); Stage 9 relies on that.
+**Real name:** data compaction (`rewrite_data_files`), `expire_snapshots`, `remove_orphan_files`, `rewrite_manifests`; snapshot operation `replace`.
+**Earns:** R9 · **Costs:** with 512 MB files and copy-on-write (the default `write.delete.mode`), deleting a few rows rewrites whole files.
+
+## Stage 9 · Row-level deletes: from rewriting files to deletion vectors
+**Breaks because:** a GDPR request for one user: data is sorted by `user_id` within each day, so the user is in ~1 of 20 files per day → **730 files × 512 MB ≈ 365 GB rewritten**. The nightly batch of 50 users touches nearly every file: **~7.3 TB rewritten per night.**
+&gt; **Pause:** Data files are immutable. What&#x27;s the smallest thing you could *write* that makes certain rows invisible, and how does a reader know which files it applies to?
+
+**Looks like:**
+```
+Table property
+  write.delete.mode = merge-on-read             # default: copy-on-write
+
+metadata/
++ 5e1f…-deletes.puffin                           # one Puffin file holding many deletion vectors
+
+delete manifest (content: 1 = deletes) entry → data_file
+  content:               1 (POSITION DELETES)
+  file_format:           puffin
+  file_path:             s3://lake/events/data/…/5e1f…-deletes.puffin
+  referenced_data_file:  s3://lake/events/data/event_ts_day=2026-10-04/00007-….parquet
+  content_offset:        40213                    # where this DV&#x27;s blob starts in the Puffin file
+  content_size_in_bytes: 118
+  record_count:          37                       # cardinality: rows deleted in that data file
+
+blob type &quot;deletion-vector-v1&quot;: 64-bit positions → (high 32 bits key → 32-bit Roaring bitmap)
+```
+**Operates like:**
+1. Delete: scan only the `user_id` column of matching files, collect row positions, write one **deletion vector** per affected data file (a Roaring bitmap of positions) into a Puffin file, and commit a snapshot with `operation: delete` whose delete manifest points at each DV. **A few MB written, not 7.3 TB.**
+2. Read: planning reads data manifests *and* delete manifests; for each data file it attaches the DV whose `referenced_data_file` matches; the reader skips set positions.
+3. Which deletes apply is decided by **data sequence numbers**: a DV applies to a data file if the data file&#x27;s sequence number is ≤ the DV&#x27;s (equal covers rows added in the same commit). A file written *after* the delete has a higher sequence number, so a later re-insert of the same user isn&#x27;t hidden.
+4. At most **one DV per data file** per snapshot: a second delete on the same file must merge the old bitmap into a new DV and remove the old one.
+5. Later compaction rewrites data files without the deleted rows and drops their DVs, so reads stop paying for them.
+6. **Failure path (delete vs compaction):** compaction commits first and replaces file F; the delete then tries to commit a DV for F. The delete must verify F is still in the table; it isn&#x27;t → conflict, re-plan against F&#x27;s replacement. Reverse order: compaction must check no new deletes landed on the files it rewrote, or it would resurrect deleted rows.
+
+**Failure modes:**
+| What fails | What happens | How the real system handles it |
+|---|---|---|
+| Compaction commits after a DV was added for its input | Compacted file still contains the deleted rows: **resurrection** | Rewrite validation: no new deletes for rewritten data files since the base snapshot |
+| Two delete jobs hit the same file concurrently | Two DVs for one file violate &quot;at most one&quot; | The later commit conflicts and must merge with the existing DV *(exact engine behavior varies, unverified)* |
+| Delete applied to a newer file | Hides re-inserted rows | Sequence-number rule (data seq ≤ delete seq) |
+| DVs accumulate for months | Every read applies thousands of bitmaps | Periodic compaction physically removes rows |
+| Streaming upserts (Flink) can&#x27;t afford to find positions | Can&#x27;t write position deletes cheaply | Equality deletes (&quot;delete where id = 5&quot;), applied to files with strictly lower sequence numbers; allowed in v2/v3, prohibited for new writes in v4 |
+
+**Simplified:** v2 position delete files (Parquet files of `file_path`, `pos`, sorted) are skipped; in v3 they&#x27;re deprecated, can&#x27;t be added, and must be converted into DVs when touched. Row lineage (`_row_id`, v3) is skipped.
+**Real name:** row-level deletes, merge-on-read vs copy-on-write, **deletion vectors** (v3, Puffin `deletion-vector-v1`), sequence numbers.
+**Earns:** R8 · **Costs:** the commit protocol is now rich (validations per operation, DV merging, sequence numbers), and every engine implements it client-side against a metastore that only knows &quot;a string called `metadata_location`&quot;.
+
+## Stage 10 · REST catalog: commits as validated requests
+**Breaks because:**
+- Spark, Trino, Flink, and PyIceberg each implement locking + validation + pointer swap against the metastore over Thrift; one buggy or stale client can roll the pointer back.
+- Every engine needs write credentials for the whole bucket.
+- The catalog only stores a pointer: it can&#x27;t enforce anything, and can&#x27;t commit two tables atomically.
+&gt; **Pause:** If the catalog could see *what* a commit changes instead of just the new pointer, what could it check on the client&#x27;s behalf?
+
+**Looks like:**
+```
+POST /v1/{prefix}/namespaces/analytics/tables/events
+Idempotency-Key: 017f22e2-79b0-7cc3-98c4-dc0c0c07398f
+X-Iceberg-Access-Delegation: vended-credentials         # on load: catalog hands out scoped storage credentials
+{
+  &quot;requirements&quot;: [
+    {&quot;type&quot;: &quot;assert-table-uuid&quot;, &quot;uuid&quot;: &quot;9c12…&quot;},
+    {&quot;type&quot;: &quot;assert-ref-snapshot-id&quot;, &quot;ref&quot;: &quot;main&quot;, &quot;snapshot-id&quot;: 6914…}
+  ],
+  &quot;updates&quot;: [
+    {&quot;action&quot;: &quot;add-snapshot&quot;, &quot;snapshot&quot;: {
+        &quot;snapshot-id&quot;: 6915…, &quot;parent-snapshot-id&quot;: 6914…, &quot;sequence-number&quot;: 514,
+        &quot;timestamp-ms&quot;: 1791202200000,
+        &quot;manifest-list&quot;: &quot;s3://lake/events/metadata/snap-6915…-1-….avro&quot;,
+        &quot;summary&quot;: {&quot;operation&quot;: &quot;append&quot;}}},
+    {&quot;action&quot;: &quot;set-snapshot-ref&quot;, &quot;ref-name&quot;: &quot;main&quot;, &quot;type&quot;: &quot;branch&quot;, &quot;snapshot-id&quot;: 6915…}
+  ]
+}
+```
+**Operates like:**
+1. Client loads the table (metadata + optionally vended credentials), writes data files, manifests, and the manifest list to S3.
+2. Client POSTs requirements + updates. Server checks each requirement against current metadata; if all hold, it applies the updates, writes the new `metadata.json`, and swaps its own pointer. **200** returns the new metadata.
+3. **Failure path (409 `CommitFailedException`):** a requirement failed (main moved). Client refreshes, re-applies its operation (new manifest list, same manifests), retries.
+4. **Failure path (500/502/504 `CommitStateUnknownException`):** the commit may or may not have happened. Client retries with the **same `Idempotency-Key`**; the server returns the original outcome instead of applying twice. Without a key, the client must reload and look for its snapshot before doing anything.
+5. Multi-table: `POST /v1/{prefix}/transactions/commit` commits several tables&#x27; changes atomically.
+6. Optional server-side scan planning (`/tables/{table}/plan`): the catalog plans and returns file scan tasks, so thin clients don&#x27;t read manifests at all.
+
+**Failure modes:**
+| What fails | What happens | How the real system handles it |
+|---|---|---|
+| Lost race | 409 | Refresh, re-apply, retry (same retry properties) |
+| Response lost after server committed | Duplicate commit if retried naively | `Idempotency-Key`; otherwise status check by reload |
+| Client sends an update the server doesn&#x27;t know | Could silently drop semantics | Server must reject unknown requirements/updates with 400 |
+| Leaked engine credentials | Access to the whole bucket | Vended, table-scoped, short-lived credentials or remote signing |
+| Catalog down | No commits; readers holding metadata locations can still read S3 | Catalog HA; data and metadata stay in S3, so the catalog can be rebuilt or replaced |
+
+**Real name:** the Iceberg REST catalog spec (implemented by Apache Polaris, AWS Glue, Unity Catalog, and others), `CommitTableRequest`, table requirements and updates.
+**Earns:** R10, plus multi-table commits · **Costs:** a new piece of infrastructure on the commit path; behavior now depends on how well the server implements the spec.
+
+---
+
+## Real vs rebuilt
+| Piece | Our rebuild | Real Iceberg | Why the difference |
+|---|---|---|---|
+| Flat file list (Stage 3) | A single metadata file listing every data file | Never existed: v1 shipped with snapshots → manifest lists → manifests | The designers started from Hive&#x27;s scaling pain, so the tree came first; the flat list is here only to make the manifest tree feel forced |
+| File-system commits | A step on the way | Shipped as `HadoopTableOperations`; now **deprecated, unsafe on object stores, to be removed in v4** | Rename-if-absent exists on HDFS, not S3. S3 added conditional writes in 2024, but the spec moved to catalogs instead |
+| Catalog | Hive Metastore, then REST | Many: Hive, Glue, JDBC, Nessie, REST servers | The spec only needs an atomic pointer swap; REST is the convergence point |
+| Metadata in a database | Rejected (O(files) rows centralize planning) | Iceberg keeps all metadata in object storage so clients plan in parallel; some newer designs (e.g. DuckLake) deliberately put it in SQL | A real trade-off, not a mistake: central DB = fast small commits, object storage = planning that scales out |
+| Deletes | Straight to v3 deletion vectors | v2 had position delete files (many per data file) and equality deletes; v3 replaced position delete files with DVs | Many small delete files hurt reads; one bitmap per data file is cheaper to apply |
+| Equality deletes | Mentioned only | Used by streaming upserts (Flink) in v2/v3; prohibited for new writes in v4 | Cheap to write, expensive to read, and break row lineage |
+| Sizes and timings | Estimated from the workload | Depend on stats per column, compression, Avro encoding | Rules of thumb; relative magnitudes are the point |
+| Newer features | Skipped | v3: variant/geo types, nanosecond timestamps, default values, row lineage, encryption keys. v4 (in development): relative paths in metadata, `content_stats` | Not needed to derive the core design |
+
+## Recall card
+```
+JSON folder: LIST 841K keys + read 36 TB          → columnar files with footer stats (read 3/20 cols)
+still O(files) to find files                       → Hive dt= folders + metastore (14 LISTs)
+folders aren&#x27;t atomic; S3 &quot;rename&quot; = copy+delete   → the table is an explicit LIST of files, not a dir
+S3 can&#x27;t compare-and-swap a version file           → catalog CAS on one pointer + optimistic retry
+the list is O(table), rewritten every commit       → snapshot → manifest list → manifests (reuse leaves)
+names and folders lie                              → field IDs + partition transforms, evolvable
+small files, endless snapshots, orphans            → compaction (replace), expiry (5 d), orphans (&gt;3 d)
+deletes rewrite TBs                                → deletion vectors, ordered by sequence numbers
+every engine re-implements commits                 → REST: requirements + updates, server validates
+Core: immutable files + one atomically swapped pointer to an immutable metadata tree.
+```
+
+*Next: try `sketch` mode for a lighter pass; zoom into one stage (&quot;trace a DV merge between two concurrent deletes, byte by byte&quot;); turn stages 3–5 into runnable Python against MinIO; or rebuild Delta Lake and diff the forks (log + checkpoints vs manifest tree).*
+</pre></div>
+<div class="done">✻ Done in 6m 52s</div>
+</section>
+<a class="back bottom" href="index.html">← Examples</a>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.7/marked.min.js"></script>
+<script>
+  if (window.marked) {
+    const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    marked.use({ gfm: true, renderer: { html: t => esc(typeof t === "string" ? t : t.text) } });
+    document.querySelectorAll(".md").forEach(el => {
+      el.innerHTML = marked.parse(el.querySelector("pre.raw").textContent);
+    });
+  }
+</script>
+</body>
+</html>

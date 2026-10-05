@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Write examples/index.html: a list of every example page, grouped by skill.
+"""Write docs/index.html: a list of every example page, grouped by skill.
 
 Example files are named <skill>--<topic>.html. Stdlib only.
-Usage: examples/tools/build_index.py
+Usage: docs/tools/build_index.py
 """
 import glob, html, os, re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-EXAMPLES = os.path.join(ROOT, "examples")
+EXAMPLES = os.path.join(ROOT, "docs")
 REPO = "https://github.com/smarchone/skills/blob/main/"
 
 

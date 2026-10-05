@@ -8,7 +8,7 @@ page, so text comes out exactly as the model wrote it. Markdown
 back to the raw Markdown, still exact.
 
 Usage:
-  examples/tools/session2html.py SESSION [-o OUT.html] [--turns 1-2] [--title T] [--no-tools]
+  docs/tools/session2html.py SESSION [-o OUT.html] [--turns 1-2] [--title T] [--no-tools]
 
 SESSION is a path to a .jsonl file, a session id (looked up under
 ~/.claude/projects/*/), or a Gemini share link (https://share.gemini.google/...
