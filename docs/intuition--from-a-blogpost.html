@@ -5,15 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Heat Management in Object Storage</title>
   <style>
-    :root { --bg:#000; --fg:#e8e8e8; --dim:#8a8a8a; --accent:#d97757; --line:#333; --code:#141414; }
+    :root { --bg:#121212; --fg:#cfcfcf; --dim:#8a8a8a; --accent:#d97757; --line:#333; --code:#1c1c1c; }
     body { background:var(--bg); color:var(--fg); margin:0; padding:24px 16px; }
-    main { max-width:860px; margin:0 auto; font:14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    main { max-width:720px; margin:0 auto; font:14px/1.75 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     header { color:var(--dim); border:1px solid var(--line); border-radius:6px; padding:8px 12px; margin-bottom:24px; }
     .turn { margin-bottom:32px; }
     .prompt { background:#1c1c1c; padding:8px 12px; border-radius:6px; white-space:pre-wrap; overflow-wrap:anywhere; }
     .prompt summary { cursor:pointer; }
     .dim { color:var(--dim); }
     .md { overflow-wrap:anywhere; }
+    .md p, .md ul, .md ol { margin:0 0 1em; }
+    .md li { margin:.3em 0; }
+    .md strong { color:#fff; }
     .md pre.raw { white-space:pre-wrap; font:inherit; margin:16px 0; }
     .md h1, .md h2, .md h3, .md h4 { font-size:1em; color:var(--accent); margin:1.4em 0 .4em; }
     .md table { border-collapse:collapse; width:100%; margin:12px 0; display:block; overflow-x:auto; }
@@ -31,7 +34,7 @@
     .back:hover { text-decoration:underline; }
     .back.bottom { margin:24px 0 0; }
     .minimap { display:none; position:fixed; top:24px; right:16px; width:180px; max-height:calc(100vh - 48px); overflow-y:auto; opacity:.35; transition:opacity .2s; font:11px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    @media (min-width:1340px) { .minimap { display:block; } }
+    @media (min-width:1180px) { .minimap { display:block; } }
     .minimap a { display:block; color:var(--dim); text-decoration:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:1px 0; }
     .minimap:hover { opacity:1; }
     .minimap a.p { margin-top:8px; }
@@ -344,7 +347,7 @@ disk holds a full hot object                fastest k shards, ignoring hot strag
 <script>
   if (window.marked) {
     const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    marked.use({ gfm: true, renderer: { html: t => esc(typeof t === "string" ? t : t.text) } });
+    marked.use({ gfm: true, breaks: true, renderer: { html: t => esc(typeof t === "string" ? t : t.text) } });
     document.querySelectorAll(".md").forEach(el => {
       el.innerHTML = marked.parse(el.querySelector("pre.raw").textContent);
     });
