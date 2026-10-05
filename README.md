@@ -8,8 +8,8 @@ Checkout examples https://smarchone.github.io/skills/.
 
 Start here. 
 
-- **[intuition](productivity/intuition/SKILL.md)**: Build deep intuition on a topic, blog, paper, or concept by attacking it from many complementary angles. Adding this skill in chrome skills (chrome://skills) has seen to 10x my readning productivity.
-- **[intuition-panel](productivity/intuition-panel/SKILL.md)**: Feel a raw product idea through a CEO, PM, and Architect, rapid-fire, one or two lines each.
+- **[intuition](productivity/intuition/SKILL.md)**: Summarize any blog post or concept from multiple perspectives.
+- **[intuition-panel](productivity/intuition-panel/SKILL.md)**: Interactive panel discussion on any topic with a council of CEO, PM and an Architect.
 
 ```sh
 npx skills add smarchone/skills/productivity/intuition
