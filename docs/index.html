@@ -3,28 +3,331 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Skill Examples</title>
+  <title>Skills Terminal</title>
+  <meta name="description" content="Pick a skill and watch it run in Claude Code.">
   <style>
-    :root { --bg:#121212; --fg:#cfcfcf; --dim:#8a8a8a; --accent:#d97757; --line:#333; }
-    body { background:var(--bg); color:var(--fg); margin:0; padding:24px 16px; }
-    main { max-width:720px; margin:0 auto; font:14px/1.75 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    h1 { font-size:1.2em; margin:0 0 4px; }
-    p { color:var(--dim); margin:0 0 24px; }
-    h2 { font-size:1em; color:var(--accent); margin:24px 0 4px; }
-    h2 a { color:inherit; }
-    ul { margin:0; padding-left:20px; }
-    a { color:var(--fg); }
-    a:hover { color:var(--accent); }
+    :root {
+      --bg:#0e0e0e; --win:#151515; --bar:#1b1b1b; --line:#2a2a2a; --code:#1e1e1e;
+      --fg:#d6d6d6; --dim:#7d7d7d; --faint:#4a4a4a; --white:#f2f2f2; --accent:#d97757;
+      --mono:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --sans:system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    * { box-sizing:border-box; }
+    html, body { background:var(--bg); color:var(--fg); margin:0; }
+    body { font:15px/1.6 var(--sans); padding:48px 16px 40px; }
+    main { max-width:860px; margin:0 auto; }
+
+    h1 { font:600 15px/1 var(--mono); color:var(--white); margin:0 0 10px; letter-spacing:-.01em; }
+    h1 span { color:var(--accent); }
+    .lede { color:var(--dim); margin:0 0 28px; }
+    .lede a { color:var(--dim); }
+    .lede a:hover { color:var(--fg); }
+
+    .picker { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    .picker button {
+      font:13px/1 var(--mono); color:var(--dim); background:transparent; cursor:pointer;
+      border:1px solid var(--line); border-radius:999px; padding:9px 14px; transition:color .15s, border-color .15s;
+    }
+    .picker button:hover { color:var(--fg); border-color:var(--faint); }
+    .picker button[aria-pressed="true"] { color:var(--accent); border-color:var(--accent); }
+    .blurb { color:var(--dim); font-size:14px; margin:0 0 16px; min-height:1.6em; }
+
+    .win { background:var(--win); border:1px solid var(--line); border-radius:12px; overflow:hidden;
+           box-shadow:0 30px 80px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.02) inset; }
+    .bar { display:flex; align-items:center; gap:12px; height:40px; padding:0 14px; background:var(--bar); border-bottom:1px solid var(--line); }
+    .dots { display:flex; gap:7px; }
+    .dots i { width:11px; height:11px; border-radius:50%; background:#333; }
+    .title { flex:1; text-align:center; font:12px var(--mono); color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ctl { display:flex; gap:4px; }
+    .ctl button { font:12px var(--mono); color:var(--dim); background:none; border:0; padding:5px 8px; border-radius:6px; cursor:pointer; }
+    .ctl button:hover { color:var(--fg); background:#262626; }
+
+    .screen { height:min(68vh, 640px); overflow-y:auto; padding:20px 22px 28px; font:13.5px/1.7 var(--mono); scrollbar-color:#333 transparent; }
+    .prompt { color:var(--white); white-space:pre-wrap; overflow-wrap:anywhere; margin:0 0 14px; }
+    .prompt::before { content:"❯ "; color:var(--dim); }
+    .prompt.next { margin-top:26px; padding-top:18px; border-top:1px dashed var(--line); }
+    .caret { display:inline-block; width:.6em; height:1.15em; vertical-align:-.2em; background:var(--fg); animation:blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity:0; } }
+    .think { color:var(--accent); margin:0 0 12px; }
+    .think span { color:var(--dim); }
+    .done { color:var(--dim); margin-top:10px; }
+    .more { color:var(--dim); margin-top:16px; }
+    .more a { color:var(--accent); }
+    .err { color:var(--dim); }
+
+    .out { position:relative; padding-left:20px; overflow-wrap:anywhere; }
+    .out::before { content:"⏺"; position:absolute; left:0; top:0; color:var(--fg); }
+    .out > div > :first-child { margin-top:0; }
+    .out p, .out ul, .out ol { margin:0 0 .9em; }
+    .out ul, .out ol { padding-left:1.4em; }
+    .out li { margin:.2em 0; }
+    .out strong { color:var(--white); }
+    .out em { color:#e6e6e6; }
+    .out h1, .out h2, .out h3, .out h4 { font-size:1em; color:var(--accent); margin:1.3em 0 .4em; }
+    .out h1 { color:var(--white); }
+    .out code { background:var(--code); padding:1px 5px; border-radius:4px; }
+    .out pre { background:var(--code); padding:10px 12px; border-radius:8px; overflow-x:auto; margin:0 0 .9em; line-height:1.5; }
+    .out pre code { background:none; padding:0; }
+    .out table { border-collapse:collapse; display:block; overflow-x:auto; margin:0 0 .9em; }
+    .out th, .out td { border:1px solid var(--line); padding:5px 9px; text-align:left; vertical-align:top; }
+    .out th { color:var(--white); }
+    .out a { color:var(--accent); }
+    .out hr { border:0; border-top:1px solid var(--line); margin:1.2em 0; }
+    .out blockquote { margin:0 0 .9em; padding-left:12px; border-left:2px solid var(--faint); color:var(--dim); }
+
+    .install { display:flex; align-items:center; gap:10px; margin-top:14px; font:13px var(--mono); }
+    .cmd { flex:1; min-width:0; display:flex; align-items:center; gap:10px; border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+    .cmd code { flex:1; min-width:0; overflow-x:auto; white-space:nowrap; color:var(--fg); scrollbar-width:none; }
+    .cmd code::before { content:"$ "; color:var(--dim); }
+    .cmd button { font:12px var(--mono); color:var(--dim); background:none; border:0; cursor:pointer; padding:0; }
+    .cmd button:hover { color:var(--accent); }
+    .full { color:var(--dim); text-decoration:none; white-space:nowrap; }
+    .full:hover { color:var(--accent); }
+    .hint { color:var(--faint); font:12px var(--mono); margin-top:28px; text-align:center; }
+
+    @media (max-width:600px) {
+      body { padding-top:28px; }
+      .screen { padding:16px 14px 24px; font-size:12.5px; height:62vh; }
+      .install { flex-direction:column; align-items:stretch; }
+      .full { text-align:right; }
+      .title, .hint { display:none; }
+    }
   </style>
 </head>
 <body>
 <main>
-<h1>Skill examples</h1>
-<p>Real chat sessions using the skills in <a href="https://github.com/smarchone/skills">smarchone/skills</a>.</p>
-<section><h2><a href="https://github.com/smarchone/skills/blob/main/productivity/intuition/SKILL.md">/intuition</a></h2><ul><li><a href="intuition--from-a-blogpost.html">Heat Management in Object Storage</a></li><li><a href="intuition--redis.html">Intuition : redis</a></li></ul></section>
-<section><h2>/intuition-pannel</h2><ul><li><a href="intuition-pannel--kafka.html">Intuition Panel : Kafka</a></li></ul></section>
-<section><h2><a href="https://github.com/smarchone/skills/blob/main/systems/origin-story/SKILL.md">/origin-story</a></h2><ul><li><a href="origin-story--cloudflare.html">Cloudflare Origin Story</a></li></ul></section>
-<section><h2><a href="https://github.com/smarchone/skills/blob/main/systems/rebuild/SKILL.md">/rebuild</a></h2><ul><li><a href="rebuild--iceberg-faithful.html">Rebuilding Iceberg (faithful)</a></li></ul></section>
+  <h1><span>~/</span>smarchone/skills</h1>
+  <p class="lede">Skills for Claude Code. Pick one and watch it run. These are real sessions, replayed. <a href="https://github.com/smarchone/skills">GitHub →</a></p>
+
+  <nav class="picker" id="picker"></nav>
+  <p class="blurb" id="blurb"></p>
+
+  <div class="win">
+    <div class="bar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div class="title" id="title">claude</div>
+      <div class="ctl">
+        <button id="speed" title="Playback speed">1×</button>
+        <button id="skip" title="Skip to end (space)">skip ⏭</button>
+      </div>
+    </div>
+    <div class="screen" id="screen" tabindex="0"></div>
+  </div>
+
+  <div class="install">
+    <div class="cmd"><code id="cmd"></code><button id="copy">copy</button></div>
+    <a class="full" id="full" href="#">full session →</a>
+  </div>
+  <p class="hint">space to skip · ← → to switch skills</p>
 </main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.7/marked.min.js"></script>
+<script>
+// Each demo replays turns from an existing example page in this folder.
+// `prompt` optionally shortens the first prompt shown.
+const DEMOS = [
+  { cmd:"intuition", group:"productivity", file:"intuition--redis.html", turns:1,
+    blurb:"Summarize any blog post or concept from multiple perspectives." },
+  { cmd:"intuition-panel", group:"productivity", file:"intuition-pannel--kafka.html", turns:4,
+    prompt:"/intuition-panel help me build intuition for a tech, layer by layer, through real failure situations. keep it short, i have adhd.",
+    blurb:"Interactive panel discussion on any topic with a council of CEO, PM and an Architect." },
+  { cmd:"origin-story", group:"systems", file:"origin-story--cloudflare.html", turns:1,
+    blurb:"The origin story of any technology, company, or idea." },
+  { cmd:"rebuild", group:"systems", file:"rebuild--iceberg-faithful.html", turns:1, maxChars:10000,
+    blurb:"Rebuild any system from scratch, one breaking point at a time." },
+];
+const CHARS_PER_SEC = 420;
+const SPEEDS = [1, 2, 4];
+
+const $ = id => document.getElementById(id);
+const screen = $("screen");
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const md = s => window.marked ? marked.parse(s) : `<pre>${esc(s)}</pre>`;
+if (window.marked) marked.use({ gfm:true, breaks:true, renderer:{ html: t => esc(typeof t === "string" ? t : t.text) } });
+
+let runId = 0, speed = 1, instant = false, stick = true, current = 0;
+const cache = {};
+
+// ---- loading ----
+async function load(demo) {
+  if (cache[demo.file]) return cache[demo.file];
+  const res = await fetch(demo.file);
+  if (!res.ok) throw new Error(res.status);
+  const doc = new DOMParser().parseFromString(await res.text(), "text/html");
+  const turns = [...doc.querySelectorAll(".turn")].slice(0, demo.turns).map(t => {
+    const p = t.querySelector(".prompt");
+    return {
+      prompt: p.textContent.replace(/^❯\s*/, "").trim(),
+      md: t.querySelector("pre.raw")?.textContent ?? "",
+      done: t.querySelector(".done")?.textContent.trim() ?? "",
+    };
+  });
+  return (cache[demo.file] = turns);
+}
+
+// Split markdown into blocks on blank lines, keeping fenced code intact.
+function blocks(src) {
+  const out = []; let cur = [], fence = false;
+  for (const line of src.split("\n")) {
+    if (/^\s*```/.test(line)) fence = !fence;
+    if (!fence && line.trim() === "") { if (cur.length) out.push(cur.join("\n")), cur = []; }
+    else cur.push(line);
+  }
+  if (cur.length) out.push(cur.join("\n"));
+  return out;
+}
+
+// ---- timing ----
+const STOP = Symbol();
+function guard(run) { if (run !== runId) throw STOP; }
+const frame = () => new Promise(r => requestAnimationFrame(r));
+async function wait(run, ms) {
+  if (!instant) await new Promise(r => setTimeout(r, ms / speed));
+  guard(run);
+}
+function follow() { if (stick) screen.scrollTop = screen.scrollHeight; }
+screen.addEventListener("scroll", () => {
+  stick = screen.scrollHeight - screen.scrollTop - screen.clientHeight < 48;
+});
+
+function el(cls, html = "") {
+  const d = document.createElement("div");
+  d.className = cls; d.innerHTML = html;
+  screen.appendChild(d); follow();
+  return d;
+}
+
+// ---- playback ----
+async function typePrompt(run, text, first) {
+  const line = el("prompt" + (first ? "" : " next"));
+  const caret = '<span class="caret"></span>';
+  const step = Math.max(1, Math.ceil(text.length / 45)); // long prompts type in ~1.5s
+  for (let i = 0; i <= text.length && !instant; i += step) {
+    line.innerHTML = esc(text.slice(0, i)) + caret;
+    follow();
+    await wait(run, 32);
+  }
+  line.innerHTML = esc(text) + caret;
+  await wait(run, 350);
+  line.textContent = text;
+}
+
+async function think(run) {
+  const t = el("think");
+  const glyphs = "·✢✳✶✻✽✻✶✳✢";
+  for (let i = 0; i < 9 && !instant; i++) {
+    t.innerHTML = `${glyphs[i % glyphs.length]} <span>Thinking…</span>`;
+    await wait(run, 90);
+  }
+  t.remove();
+}
+
+async function stream(run, src) {
+  const out = el("out");
+  for (const b of blocks(src)) {
+    const div = document.createElement("div");
+    out.appendChild(div);
+    if (instant) { div.innerHTML = md(b); continue; }
+    const byLine = /^\s*(```|\|)/.test(b);
+    const units = byLine ? b.split("\n") : null;
+    const total = byLine ? units.length : b.length;
+    let shown = 0, last = performance.now();
+    while (shown < total) {
+      await frame(); guard(run);
+      if (instant) { shown = total; break; }
+      const now = performance.now(), dt = (now - last) / 1000; last = now;
+      shown = Math.min(total, shown + (byLine ? dt * 28 : dt * CHARS_PER_SEC) * speed);
+      const n = Math.floor(shown);
+      let part = byLine ? units.slice(0, n).join("\n") : b.slice(0, n);
+      if (byLine && /^\s*```/.test(b) && n < total) part += "\n```";
+      div.innerHTML = md(part);
+      follow();
+    }
+    div.innerHTML = md(b);
+    follow();
+    if (/^#{1,4}\s/.test(b)) await wait(run, 260);
+  }
+}
+
+function capped(src, max) {
+  if (!max || src.length <= max) return [src, false];
+  let acc = "";
+  for (const b of blocks(src)) {
+    if (acc.length + b.length > max && acc) break;
+    acc += (acc ? "\n\n" : "") + b;
+  }
+  return [acc, true];
+}
+
+async function play(i) {
+  const run = ++runId, demo = DEMOS[i];
+  current = i; instant = false; stick = true;
+  screen.innerHTML = "";
+  render(demo);
+  setSkip("skip ⏭");
+  try {
+    let turns;
+    try { turns = await load(demo); } catch {
+      guard(run);
+      el("err", `Couldn't load ${esc(demo.file)}. Serve this folder over http, e.g. <code>python3 -m http.server</code>.`);
+      return;
+    }
+    guard(run);
+    await wait(run, 300);
+    for (const [k, t] of turns.entries()) {
+      await typePrompt(run, k === 0 && demo.prompt || t.prompt, k === 0);
+      await think(run);
+      const [src, cut] = capped(t.md, demo.maxChars);
+      await stream(run, src);
+      if (cut) { el("more", `… keeps going. <a href="${demo.file}">Read the full session →</a>`); break; }
+      if (t.done) el("done", esc(t.done));
+      if (k < turns.length - 1) await wait(run, 900);
+    }
+    setSkip("replay ↻");
+  } catch (e) { if (e !== STOP) throw e; }
+}
+
+// ---- chrome ----
+function render(demo) {
+  document.querySelectorAll("#picker button").forEach((b, j) => b.setAttribute("aria-pressed", j === current));
+  $("blurb").textContent = demo.blurb;
+  $("title").textContent = `claude — /${demo.cmd}`;
+  $("cmd").textContent = `npx skills add smarchone/skills/${demo.group}/${demo.cmd}`;
+  $("full").href = demo.file;
+  $("copy").textContent = "copy";
+  history.replaceState(null, "", "#" + demo.cmd);
+}
+function setSkip(label) { $("skip").textContent = label; }
+
+DEMOS.forEach((d, i) => {
+  const b = document.createElement("button");
+  b.textContent = "/" + d.cmd;
+  b.onclick = () => play(i);
+  $("picker").appendChild(b);
+});
+
+function skip() {
+  if ($("skip").textContent.startsWith("replay")) play(current);
+  else instant = true;
+}
+$("skip").onclick = skip;
+$("speed").onclick = () => {
+  speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length];
+  $("speed").textContent = speed + "×";
+};
+$("copy").onclick = async () => {
+  try { await navigator.clipboard.writeText($("cmd").textContent); $("copy").textContent = "copied"; }
+  catch { $("copy").textContent = "select it"; }
+};
+addEventListener("keydown", e => {
+  if (e.target.closest?.("button") && (e.key === " " || e.key === "Enter")) return;
+  if (e.key === " ") { e.preventDefault(); skip(); }
+  if (e.key === "ArrowRight") play((current + 1) % DEMOS.length);
+  if (e.key === "ArrowLeft") play((current + DEMOS.length - 1) % DEMOS.length);
+});
+
+const start = DEMOS.findIndex(d => "#" + d.cmd === location.hash);
+play(start < 0 ? 0 : start);
+</script>
 </body>
 </html>
