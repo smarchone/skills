@@ -23,7 +23,10 @@
     .lede a { color:var(--dim); }
     .lede a:hover { color:var(--fg); }
 
-    .picker { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    .picker { display:flex; flex-wrap:wrap; align-items:center; gap:10px 8px; margin-bottom:12px; }
+    .picker .grp { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+    .picker .lbl { font:11px/1 var(--mono); color:var(--faint); text-transform:uppercase; letter-spacing:.08em; margin-right:2px; }
+    .picker .div { width:1px; height:20px; background:var(--line); margin:0 8px; }
     .picker button {
       font:13px/1 var(--mono); color:var(--dim); background:transparent; cursor:pointer;
       border:1px solid var(--line); border-radius:999px; padding:9px 14px; transition:color .15s, border-color .15s;
@@ -91,13 +94,15 @@
       .install { flex-direction:column; align-items:stretch; }
       .full { text-align:right; }
       .title, .hint { display:none; }
+      .picker .div { display:none; }
+      .picker .grp { width:100%; }
     }
   </style>
 </head>
 <body>
 <main>
   <h1><span>~/</span>smarchone/skills</h1>
-  <p class="lede">Skills for Claude Code. Pick one and watch it run. These are real sessions, replayed. <a href="https://github.com/smarchone/skills">GitHub →</a></p>
+  <p class="lede">Skills for Claude Code that make learning faster. Pick one and watch a real session. <a href="https://github.com/smarchone/skills">GitHub →</a></p>
 
   <nav class="picker" id="picker"></nav>
   <p class="blurb" id="blurb"></p>
@@ -126,16 +131,20 @@
 // Each demo replays turns from an existing example page in this folder.
 // `prompt` optionally shortens the first prompt shown.
 const DEMOS = [
-  { cmd:"intuition", group:"productivity", file:"intuition--redis.html", turns:1,
-    blurb:"Summarize any blog post or concept from multiple perspectives." },
-  { cmd:"intuition-panel", group:"productivity", file:"intuition-pannel--kafka.html", turns:4,
+  { cmd:"intuition", group:"productivity", kind:"report", file:"intuition--redis.html", turns:1,
+    blurb:"Any concept, from five angles, in one read. The expert take without the hour of reading." },
+  { cmd:"origin-story", group:"systems", kind:"report", file:"origin-story--cloudflare.html", turns:1,
+    blurb:"Why a technology exists, what broke first, and who built it. The story behind the tool." },
+  { cmd:"rebuild", group:"systems", kind:"report", file:"rebuild--iceberg-faithful.html", turns:1, maxChars:10000,
+    blurb:"Rebuild any system from scratch, one breaking point at a time. Learn why it's shaped the way it is." },
+  { cmd:"intuition-panel", group:"productivity", kind:"explore", file:"intuition-pannel--kafka.html", turns:4,
     prompt:"/intuition-panel help me build intuition for a tech, layer by layer, through real failure situations. keep it short, i have adhd.",
-    blurb:"Interactive panel discussion on any topic with a council of CEO, PM and an Architect." },
-  { cmd:"origin-story", group:"systems", file:"origin-story--cloudflare.html", turns:1,
-    blurb:"The origin story of any technology, company, or idea." },
-  { cmd:"rebuild", group:"systems", file:"rebuild--iceberg-faithful.html", turns:1, maxChars:10000,
-    blurb:"Rebuild any system from scratch, one breaking point at a time." },
+    blurb:"Not a report, a conversation. A CEO, PM and architect push back while you think the idea through." },
 ];
+const KINDS = {
+  report:  { label:"Reports", tip:"Condensed, opinionated, and quick to read" },
+  explore: { label:"Explore", tip:"Interactive: think an idea through" },
+};
 const CHARS_PER_SEC = 420;
 const SPEEDS = [1, 2, 4];
 
@@ -299,11 +308,19 @@ function render(demo) {
 }
 function setSkip(label) { $("skip").textContent = label; }
 
-DEMOS.forEach((d, i) => {
-  const b = document.createElement("button");
-  b.textContent = "/" + d.cmd;
-  b.onclick = () => play(i);
-  $("picker").appendChild(b);
+Object.keys(KINDS).forEach((kind, n) => {
+  if (n) { const v = document.createElement("span"); v.className = "div"; $("picker").appendChild(v); }
+  const g = document.createElement("div");
+  g.className = "grp"; g.title = KINDS[kind].tip;
+  g.innerHTML = `<span class="lbl">${KINDS[kind].label}</span>`;
+  DEMOS.forEach((d, i) => {
+    if (d.kind !== kind) return;
+    const b = document.createElement("button");
+    b.textContent = "/" + d.cmd;
+    b.onclick = () => play(i);
+    g.appendChild(b);
+  });
+  $("picker").appendChild(g);
 });
 
 function skip() {
