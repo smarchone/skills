@@ -50,14 +50,11 @@ rule, the way a model learns from a few shots.
 Covered: <abstractions the shots hit> · Not yet: <the rest of the map>
 
 ## Your turn
-<one held-out case. The user predicts the output before reading on>
-
-Answer ↓ (predict first)
-
-<answer>
+<one held-out case. The user predicts the output; don't give the answer>
 ````
 
 ## Follow-ups
+User replies with a prediction → give the answer and say which shot it follows from.
 Asked for more → scale up: write more shots aimed at the **Not yet** list (not variations on covered
 ground), and update Coverage until the map is done.
 Offer: more shots, or a harder held-out case.
