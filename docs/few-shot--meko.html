@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Few-shot : Yugabyte Meko</title>
+  <style>
+    :root { --bg:#121212; --fg:#cfcfcf; --dim:#8a8a8a; --accent:#d97757; --line:#333; --code:#1c1c1c; }
+    body { background:var(--bg); color:var(--fg); margin:0; padding:24px 16px; }
+    main { max-width:720px; margin:0 auto; font:14px/1.75 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    header { color:var(--dim); border:1px solid var(--line); border-radius:6px; padding:8px 12px; margin-bottom:24px; }
+    .turn { margin-bottom:32px; }
+    .prompt { background:#1c1c1c; padding:8px 12px; border-radius:6px; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .prompt summary { cursor:pointer; }
+    .dim { color:var(--dim); }
+    .md { overflow-wrap:anywhere; }
+    .md p, .md ul, .md ol { margin:0 0 1em; }
+    .md li { margin:.3em 0; }
+    .md strong { color:#fff; }
+    .md pre.raw { white-space:pre-wrap; font:inherit; margin:16px 0; }
+    .md h1, .md h2, .md h3, .md h4 { font-size:1em; color:var(--accent); margin:1.4em 0 .4em; }
+    .md table { border-collapse:collapse; width:100%; margin:12px 0; display:block; overflow-x:auto; }
+    .md th, .md td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+    .md th { background:#141414; }
+    .md code { background:var(--code); padding:1px 4px; border-radius:3px; }
+    .md pre { background:var(--code); padding:10px 12px; border-radius:6px; overflow-x:auto; }
+    .md pre code { background:none; padding:0; }
+    .md a { color:var(--accent); }
+    .md hr { border:0; border-top:1px solid var(--line); }
+    .tool { color:var(--dim); margin:8px 0; }
+    .tool pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:320px; overflow:auto; background:var(--code); padding:8px; }
+    .done { color:var(--dim); margin-top:12px; }
+    .back { display:inline-block; color:var(--accent); font-size:1.15em; font-weight:600; text-decoration:none; margin:0 0 12px; }
+    .back:hover { text-decoration:underline; }
+    .back.bottom { margin:24px 0 0; }
+    .minimap { display:none; position:fixed; top:24px; right:16px; width:180px; max-height:calc(100vh - 48px); overflow-y:auto; opacity:.35; transition:opacity .2s; font:11px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    @media (min-width:1180px) { .minimap { display:block; } }
+    .minimap a { display:block; color:var(--dim); text-decoration:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:1px 0; }
+    .minimap:hover { opacity:1; }
+    .minimap a.p { margin-top:8px; }
+    .minimap a.h2 { padding-left:8px; }
+    .minimap a.h3 { padding-left:16px; }
+    .minimap a.on { color:var(--fg); }
+    .minimap a:hover { color:var(--accent); }
+    [id^="mm-"] { scroll-margin-top:16px; }
+  </style>
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← Examples</a>
+<header><div>Claude Code 2.1.296</div><div>claude-opus-5-5</div><div>~/demo</div></header>
+<section class="turn"><div class="prompt">❯ /few-shot yugabyte meko</div>
+<div class="md"><pre class="raw">Meko launched in May 2026 and I haven't looked it up. The shots below come from what I already know. Anything I'm not sure of is marked *(unverified)*. Want me to check the docs first? Say so and I'll verify before you rely on it.
+
+# Yugabyte Meko in 6 shots
+Shared memory, knowledge, and decision traces for multi-agent systems, served over MCP.
+
+## Shot 1 · canonical · One agent writes, a different agent recalls
+**Input:** Two agents run as separate processes under the same API key and datapack. The reviewer starts later with an empty context.
+```json
+// planner process
+{"tool": "memory_add", "args": {"text": "DECISION: ship the migration behind a flag. REASON: rollback must take under 5 min.",
+  "agent_id": "planner", "datapack_id": "&lt;uuid&gt;"}}
+
+// reviewer process
+{"tool": "memory_search", "args": {"query": "how are we shipping the migration?",
+  "agent_id": "reviewer", "datapack_id": "&lt;uuid&gt;"}}
+```
+**Output:** The reviewer gets the planner's memory back, ranked by semantic, keyword, and entity match. Calling with `agent_id: "reviewer"` doesn't filter it out, because search spans all of the user's agent namespaces in the datapack.
+**Signal:** Memory belongs to the datapack and to the user account behind the API key. `agent_id` labels who wrote what. It isn't a wall between agents.
+
+## Shot 2 · edge · A teammate sees nothing until something promotes it
+**Input:** The datapack is shared with user 2. User 2's agent runs the same `memory_search`. Then user 1, the owner, promotes the memory, and user 2 searches again.
+```json
+{"tool": "memory_promote", "args": {"memory_ids": ["&lt;id&gt;"], "agent_id": "planner", "datapack_id": "&lt;uuid&gt;"}}
+```
+**Output:**
+```
+user 2, before promote → results: []
+user 1, promote        → moved to the datapack's shared layer (one-way)
+user 2, after promote  → results: [ "DECISION: ship the migration behind a flag…" ]
+```
+**Signal:** Memories are private by default. There are three zones: **private** (your agents), **learnings** (candidates a human reviews in the portal), and **institutional** (Collective Memory and Shared Knowledge, which every member's agents can read). Only an owner or maintainer can promote, and a promotion can't be undone.
+
+## Shot 3 · edge · Two ways to write, and they don't store the same thing
+**Input:** The same fact is written two ways.
+```json
+{"tool": "conversation_add_message", "args": {"conversation_id": "c1", "agent_id": "planner",
+  "input": "ok sounds good",
+  "output": "Decided: we'll pin Postgres 16 for the migration.", "datapack_id": "&lt;uuid&gt;"}}
+
+{"tool": "memory_add", "args": {"text": "Migration pins Postgres 16.", "agent_id": "planner", "datapack_id": "&lt;uuid&gt;"}}
+```
+**Output:** `conversation_add_message` stores the whole turn as history and for the trace. An LLM extractor pulls durable facts from it server-side, asynchronously and on a best-effort basis. It works from the user turn, so "Postgres 16" probably never becomes a memory *(unverified: whether assistant output is ever extracted)*. `memory_add` stores your text as written.
+**Signal:** Use conversations for the record and `memory_add` for facts you can't lose: decisions the agent made, facts from tool output, and corrections.
+
+## Shot 4 · edge · "Get all" doesn't return everything
+**Input:** An agent tries to export its memories.
+```json
+{"tool": "memory_get_all", "args": {"agent_id": "planner", "datapack_id": "&lt;uuid&gt;"}}
+```
+**Output:** You get a recent window of about 20 memories plus a total count, and there are no pagination arguments. Older items are reachable only through `memory_search` or `memory_get_by_id`.
+**Signal:** Retrieval goes through ranked search, not scans. Build your agent around asking good queries, not around listing everything.
+
+## Shot 5 · real-world · A handoff that carries the why
+**Input:** A researcher agent saves its turn with the reasoning and plan attached. A procurement agent, or a human auditor, picks it up a week later.
+```json
+{"tool": "conversation_add_message", "args": {"conversation_id": "c7", "agent_id": "researcher",
+  "input": "Which queue vendor should we use?",
+  "output": "Recommend vendor B.",
+  "reasoning": "A has the lower list price, but egress fees dominate at 40 TB/month.",
+  "plan": ["compare list pricing", "model egress at 40 TB/month", "check SLA terms"],
+  "datapack_id": "&lt;uuid&gt;"}}
+```
+**Output:** The turn shows up as a **decision trace** in the Observe view, linking the prompt, plan, reasoning, and any memories it produced. The next agent inherits *why* vendor B won, not just "B". Recent conversations stay hot in YugabyteDB, and older ones tier to S3 *(unverified: the window, and whether old history is kept in full or only as summaries)*.
+**Signal:** A standard trace records which calls ran. A decision trace records why the agent decided what it did. Meko is built around that second kind, because handoffs and audits (for example under the EU AI Act) depend on it.
+
+## Shot 6 · near-miss · Same vendor, also MCP, but not Meko
+**Input:** You want an agent to answer "what's our p99 order latency by region?" against your app's YugabyteDB.
+```text
+Option A: Meko                  → memory_search / knowledgebase_search
+Option B: yugabytedb-mcp-server → SQL over your own cluster (tool names unverified)
+```
+**Output:** Meko has no SQL tool for your schema. Its MCP surface covers only conversations, memory, the knowledge base, datapacks, and artifacts. YugabyteDB runs underneath, but Meko doesn't expose it to you as a database.
+**Signal:** Meko is memory for agents, not a database for agents to query. It decides what gets stored and who can see it, and it hides the storage engine.
+
+## Pattern
+- The **datapack** is the core primitive. It holds conversations, memories, knowledge documents, traces, and artifacts. Pass its ID explicitly on every call.
+- Identity comes from the **API key**, which decides the user account. `agent_id` attributes writes, and it also gates edits to a memory.
+- Memories are **private by default**. Promotion is the only way to share one, it is one-way, it needs an owner or maintainer, and it usually goes through human review.
+- **Writes are curated:** conversations are extracted asynchronously and lossily, while `memory_add` is exact. **Reads go through ranked search**, not scans.
+- **Traces record why.** Reasoning and plan travel with the output, so the next agent or an auditor gets the rationale too.
+
+## Coverage
+Covered: datapacks, private vs. shared memory, promotion and roles, the two write paths, retrieval semantics, decision traces and handoffs, Meko vs. raw database access.
+Not yet: knowledge-base uploads and `knowledgebase_search`, content-addressed artifacts (`artifact_put`/`artifact_get`), datapack lifecycle and sharing roles, setup (MCP URL, API keys, OAuth), retention and deletion, and positioning vs. mem0, which Meko uses as its default memory provider *(unverified)*.
+
+## Your turn
+User 1, the owner, runs a planner agent. It saves one turn with `conversation_add_message`: the user says "yes do it", and the assistant replies "Locking the launch date to Nov 3." Ten seconds later, a reviewer agent using **user 2's** key calls `memory_search(query="launch date")`. What comes back, and what does it take for the reviewer to find the date?
+
+---
+
+Want more shots from the **Not yet** list, a harder held-out case, or should I check the docs to confirm the *(unverified)* parts?</pre></div>
+</section>
+<a class="back bottom" href="index.html">← Examples</a>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.7/marked.min.js"></script>
+<script>
+  if (window.marked) {
+    const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    marked.use({ gfm: true, breaks: true, renderer: { html: t => esc(typeof t === "string" ? t : t.text) } });
+    document.querySelectorAll(".md").forEach(el => {
+      el.innerHTML = marked.parse(el.querySelector("pre.raw").textContent);
+    });
+  }
+</script>
+<script>
+  (() => {
+    const items = [];
+    document.querySelectorAll(".turn").forEach(t => {
+      const p = t.querySelector(".prompt");
+      if (p) items.push({ el: p, cls: "p", text: (p.querySelector("summary") || p).textContent.replace(/^❯\s*/, "").split("\n")[0] });
+      t.querySelectorAll(".md h1, .md h2, .md h3").forEach(h => items.push({ el: h, cls: h.tagName.toLowerCase(), text: h.textContent }));
+    });
+    if (items.length < 2) return;
+    const nav = document.createElement("nav");
+    nav.className = "minimap";
+    const links = items.map((it, i) => {
+      it.el.id ||= "mm-" + i;
+      const a = document.createElement("a");
+      a.href = "#" + it.el.id;
+      a.className = it.cls;
+      a.textContent = a.title = it.text.trim();
+      nav.appendChild(a);
+      return a;
+    });
+    document.body.appendChild(nav);
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      let cur = 0;
+      items.forEach((it, i) => { if (it.el.getBoundingClientRect().top < 100) cur = i; });
+      links.forEach((a, i) => a.classList.toggle("on", i === cur));
+      const a = links[cur];
+      if (a.offsetTop < nav.scrollTop || a.offsetTop > nav.scrollTop + nav.clientHeight - 20) nav.scrollTop = a.offsetTop - nav.clientHeight / 2;
+    };
+    addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    update();
+  })();
+</script>
+</body>
+</html>
