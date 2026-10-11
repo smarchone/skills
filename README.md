@@ -29,6 +29,7 @@ Understanding things faster.
 - **[few-shot](productivity/few-shot/SKILL.md)**: Learn any concept or tool from a few nontrivial examples, few-shot style.
 - **[feel](productivity/feel/SKILL.md)**: Feel how a system behaves at scale, through simulated scenes with real numbers.
 - **[product-panel](productivity/product-panel/SKILL.md)**: Pressure-test a product idea with a founding team of CEO, PM and an Architect.
+- **[report-panel](productivity/report-panel/SKILL.md)**: Report on a talk or launch, with a segment each for a CEO, PM and an Architect.
 - **[intuition-panel](productivity/intuition-panel/SKILL.md)**: Interactive panel discussion on any topic with a council of CEO, PM and an Architect.
 
 ### [Systems](systems/README.md)

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report Panel : Claude Code Projects</title>
+  <style>
+    :root { --bg:#121212; --fg:#cfcfcf; --dim:#8a8a8a; --accent:#d97757; --line:#333; --code:#1c1c1c; }
+    body { background:var(--bg); color:var(--fg); margin:0; padding:24px 16px; }
+    main { max-width:720px; margin:0 auto; font:14px/1.75 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    header { color:var(--dim); border:1px solid var(--line); border-radius:6px; padding:8px 12px; margin-bottom:24px; }
+    .turn { margin-bottom:32px; }
+    .prompt { background:#1c1c1c; padding:8px 12px; border-radius:6px; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .prompt summary { cursor:pointer; }
+    .dim { color:var(--dim); }
+    .md { overflow-wrap:anywhere; }
+    .md p, .md ul, .md ol { margin:0 0 1em; }
+    .md li { margin:.3em 0; }
+    .md strong { color:#fff; }
+    .md pre.raw { white-space:pre-wrap; font:inherit; margin:16px 0; }
+    .md h1, .md h2, .md h3, .md h4 { font-size:1em; color:var(--accent); margin:1.4em 0 .4em; }
+    .md table { border-collapse:collapse; width:100%; margin:12px 0; display:block; overflow-x:auto; }
+    .md th, .md td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+    .md th { background:#141414; }
+    .md code { background:var(--code); padding:1px 4px; border-radius:3px; }
+    .md pre { background:var(--code); padding:10px 12px; border-radius:6px; overflow-x:auto; }
+    .md pre code { background:none; padding:0; }
+    .md a { color:var(--accent); }
+    .md hr { border:0; border-top:1px solid var(--line); }
+    .tool { color:var(--dim); margin:8px 0; }
+    .tool pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:320px; overflow:auto; background:var(--code); padding:8px; }
+    .done { color:var(--dim); margin-top:12px; }
+    .back { display:inline-block; color:var(--accent); font-size:1.15em; font-weight:600; text-decoration:none; margin:0 0 12px; }
+    .back:hover { text-decoration:underline; }
+    .back.bottom { margin:24px 0 0; }
+    .minimap { display:none; position:fixed; top:24px; right:16px; width:180px; max-height:calc(100vh - 48px); overflow-y:auto; opacity:.35; transition:opacity .2s; font:11px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    @media (min-width:1180px) { .minimap { display:block; } }
+    .minimap a { display:block; color:var(--dim); text-decoration:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:1px 0; }
+    .minimap:hover { opacity:1; }
+    .minimap a.p { margin-top:8px; }
+    .minimap a.h2 { padding-left:8px; }
+    .minimap a.h3 { padding-left:16px; }
+    .minimap a.on { color:var(--fg); }
+    .minimap a:hover { color:var(--accent); }
+    [id^="mm-"] { scroll-margin-top:16px; }
+  </style>
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← Examples</a>
+<header><div>Claude Code 2.1.296</div><div>claude-opus-5-5</div><div>~/Documents/proj/claude/spark/skills</div></header>
+<section class="turn"><div class="prompt">❯ /report-panel claude code projects feature</div>
+<div class="md"><pre class="raw"># Claude Code Projects: one agent you talk to, many agents doing the work
+**Source:** launch coverage of Claude Code Projects (beta, 17 Sep 2026): [dsebastien.net](https://www.dsebastien.net/claude-code-projects-stop-managing-sessions-talk-to-one-agent/), [eesel.ai](https://www.eesel.ai/blog/claude-code-projects) · **For:** PM
+&gt; Source note: secondhand only. The official docs page returned 404 and the X announcement wasn&#x27;t opened. eesel is a competing vendor. No Projects-specific pricing or limits were published.
+
+## CEO note
+**What&#x27;s happening:** Claude Code moves from &quot;you run sessions&quot; to &quot;you state a goal.&quot; One long-lived agent splits the goal into threads, runs them as parallel cloud sessions, and keeps the memory.
+**Why it matters:** the developer stops being the orchestrator. Mollick&#x27;s run had 18 threads, each starting its own sub-agents, for about a day of work — &quot;an organization to solve your problem.&quot;
+**The real constraint:** cost and auditability, not capability. Every thread is a full session that draws on the same subscription limits.
+- **Opportunity:** a single entry point for vague, multi-day goals that no other surface handles.
+- **Threat:** it burns through limits and turns out work nobody can review. Users will blame the plan, not the feature.
+- **Watch:** per-project spend, how legible each thread is, and the rollout to Team and Enterprise.
+
+**Bottom line:** the product isn&#x27;t parallelism, it&#x27;s *delegation you can trust without watching*.
+
+## The product
+| Capability | What it does | Status |
+|---|---|---|
+| Orchestrator agent | One persistent conversation per project. It holds the memory, plans and delegates | Beta |
+| Threads | The goal is split into parallel cloud sessions that keep running after the laptop closes | Beta |
+| Context passing | The orchestrator moves context between threads and assembles the result | Beta |
+| Memory | Remembers how the user works across the project | Beta |
+| Proactive / scheduled runs | The project can act on its own or on a schedule | Beta |
+| Model mixing | Uses expensive and cheap models according to user preference | Beta |
+| Surfaces | Desktop app and web (claude.ai/code) | Select Pro and Max users; &quot;everyone soon&quot;; Team and Enterprise not yet ⚑ (sources conflict) |
+
+**How it fits:**
+```
+ you ── goal, stray thoughts ──▶ PROJECT (orchestrator: plan · memory · review)
+                                     │ splits / passes context
+                     ┌───────────────┼───────────────┐
+                  thread 1        thread 2  ...   thread N    (cloud sessions,
+                  └─ subagents    └─ subagents    └─ subagents  same setup layer:
+                     └───────────────┼───────────────┘          CLAUDE.md, skills,
+                                     ▼                          MCP, hooks)
+                          assembled result ──▶ you review
+```
+**Loop:** state goal → orchestrator scopes and splits → threads run in parallel → orchestrator reviews and assembles → you steer → memory gets updated → next goal.
+
+**Where it sits among Claude Code&#x27;s multi-agent features:** Agent View (you dispatch, you orchestrate) · Agent Teams (local, experimental) · Routines (one saved task plus a trigger) · `ultracode` workflows (deterministic, scripted fan-out) · **Projects (persistent, plans and remembers)**. Workflows are for control and repeatability; Projects are for messy goals you come back to.
+
+## PM view
+**Experience vision**
+- **Work starts as a conversation, not a session.** You talk to one agent, and Boris Cherny&#x27;s habit is to send thoughts as they come and let Claude sort them into threads.
+- **Your role moves from dispatcher to client.** You scope and review; you don&#x27;t babysit five terminals.
+- **Work outlives your attention.** Threads run in the cloud, can run on a schedule, and pick up where they stopped.
+
+**Impact claimed:** about a day of work coordinated from one prompt (Mollick, 18 threads). There&#x27;s no official productivity number.
+
+**Novel approaches**
+1. **Delegation is the default interaction.** The user never chooses how many agents to run.
+2. **Memory is scoped to the project, not to a session or a repo.** It&#x27;s the thing that makes &quot;come back to it later&quot; work.
+3. **Built-in skeptic agents.** Mollick&#x27;s run ended with agents fact-checking the other agents&#x27; write-ups. Review is part of the plan, not something done afterward ⚑ (it isn&#x27;t clear whether this is a default or something the prompt asked for).
+4. **Model mixing as a preference.** Cost control is set as a policy, not by picking a model per call.
+
+**Gaps and open questions**
+- **Spend is invisible upfront.** No estimate or cap per project, and threads fan out on their own. This is the biggest risk to trust.
+- **Auditability.** With 18 threads × sub-agents, what did each one do, and why? There&#x27;s no evidence of a per-thread trace or summary in the sources.
+- **Naming collision** with Claude app Projects, which are knowledge bases for chats. Expect support confusion.
+- **Setup still decides quality.** Threads inherit CLAUDE.md, skills and MCP, and users report 2–3 weeks to dial that in.
+- **Team use is unclear.** No word on shared projects, permissions, or plans other than Pro and Max.
+
+## Architect view
+| Layer | Component | Key property |
+|---|---|---|
+| Surface | Desktop and web conversation | One agent is the entry point |
+| Orchestration | Long-lived orchestrator, said to share an architecture with Claude Tag | Holds plan and memory; delegates |
+| Execution | Cloud Claude Code sessions per thread, plus their own subagents | Parallel, survives disconnects |
+| Context | Project memory plus the per-repo setup layer | Context is passed between threads by the orchestrator |
+| Governance | Shared usage pool (5-hour window plus weekly limits) | No per-project budget surfaced |
+
+| Decision | Chosen | Gives up |
+|---|---|---|
+| Planning | **Model-planned fan-out** | Determinism and repeatability (that&#x27;s what `ultracode` workflows are for) |
+| Execution | **Cloud sessions** | Local tools and machines; cost moves to the user&#x27;s limits |
+| Memory | **One orchestrator holds the state** | Threads see only what the orchestrator passes on ⚑ |
+| Billing | **Same pool as chat and terminal** | Isolation: one runaway project can starve everything else |
+
+**Hard problems**
+- **Context handoff.** What the orchestrator passes to each thread decides quality, and a lossy summary means duplicated or conflicting work ⚑.
+- ⚑ **Conflicting edits.** Parallel threads touching the same repo need branch or merge discipline.
+- ⚑ **Runaway fan-out.** Recursive sub-agents need depth and budget limits at the orchestrator.
+- **Trace and replay.** Auditing many threads needs a structured record of each thread, not raw transcripts.
+
+**Extension points:** threads use the existing setup layer (CLAUDE.md, skills, MCP, hooks), so any investment in a repo&#x27;s setup pays off in every thread.
+</pre></div>
+<div class="done">✻ Done in 1m 25s</div>
+</section>
+<a class="back bottom" href="index.html">← Examples</a>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.7/marked.min.js"></script>
+<script>
+  if (window.marked) {
+    const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    marked.use({ gfm: true, breaks: true, renderer: { html: t => esc(typeof t === "string" ? t : t.text) } });
+    document.querySelectorAll(".md").forEach(el => {
+      el.innerHTML = marked.parse(el.querySelector("pre.raw").textContent);
+    });
+  }
+</script>
+<script>
+  (() => {
+    const items = [];
+    document.querySelectorAll(".turn").forEach(t => {
+      const p = t.querySelector(".prompt");
+      if (p) items.push({ el: p, cls: "p", text: (p.querySelector("summary") || p).textContent.replace(/^❯\s*/, "").split("\n")[0] });
+      t.querySelectorAll(".md h1, .md h2, .md h3").forEach(h => items.push({ el: h, cls: h.tagName.toLowerCase(), text: h.textContent }));
+    });
+    if (items.length < 2) return;
+    const nav = document.createElement("nav");
+    nav.className = "minimap";
+    const links = items.map((it, i) => {
+      it.el.id ||= "mm-" + i;
+      const a = document.createElement("a");
+      a.href = "#" + it.el.id;
+      a.className = it.cls;
+      a.textContent = a.title = it.text.trim();
+      nav.appendChild(a);
+      return a;
+    });
+    document.body.appendChild(nav);
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      let cur = 0;
+      items.forEach((it, i) => { if (it.el.getBoundingClientRect().top < 100) cur = i; });
+      links.forEach((a, i) => a.classList.toggle("on", i === cur));
+      const a = links[cur];
+      if (a.offsetTop < nav.scrollTop || a.offsetTop > nav.scrollTop + nav.clientHeight - 20) nav.scrollTop = a.offsetTop - nav.clientHeight / 2;
+    };
+    addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    update();
+  })();
+</script>
+</body>
+</html>

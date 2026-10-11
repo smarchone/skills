@@ -11,6 +11,7 @@ Skills for understanding things faster — building intuition, separating concep
 | [`/few-shot`](few-shot/SKILL.md) | You want to learn a concept or tool fast | Teaches it through a few nontrivial examples, then a held-out case to predict |
 | [`/feel`](feel/SKILL.md) | You want to know how a system behaves at scale | Simulates scenes with concrete numbers for a given scale or operation |
 | [`/intuition-panel`](intuition-panel/SKILL.md) | You want to "feel" a product idea quickly | A CEO, PM, and Architect react rapid-fire, one or two lines each |
+| [`/report-panel`](report-panel/SKILL.md) | You want the product experience out of a talk, video, or launch | A short report with a CEO note, the product map, and PM and Architect segments |
 | [`/product-panel`](product-panel/SKILL.md) | You're exploring a product idea, not building it yet | A CEO takes positions while a PM and Architect challenge; can produce a product doc, positioning, or build order |
 
 - `/intuition-panel` is the lightweight version of `/product-panel`.
@@ -25,4 +26,5 @@ npx skills add smarchone/skills/productivity/feel
 npx skills add smarchone/skills/productivity/few-shot
 npx skills add smarchone/skills/productivity/intuition-panel
 npx skills add smarchone/skills/productivity/product-panel
+npx skills add smarchone/skills/productivity/report-panel
 ```
