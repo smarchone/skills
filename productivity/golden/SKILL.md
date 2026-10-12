@@ -8,9 +8,11 @@ description: Saves the current conversation as a golden session — the visible 
 You're mid-conversation and it's gold. Capture it in seconds: one merged PR to the golden repo, the landing zone
 for golden sessions. Transcripts are cheap; the user's **why** is the asset.
 
-## Ask at most one thing
-- **Why** this session mattered: take it from the user's request. Missing → ask once, in one line. Nothing else is a question; fill the rest yourself.
-- **Repo**: the local clone at `$GOLDEN_REPO`. Unset → ask for the path once.
+## Don't ask; suggest
+- **Why** this session mattered: if the user gave one in the request, use their words verbatim. Otherwise
+  write it yourself: one line, in the user's voice, naming the insight they'd want to find again, not a
+  summary of the topic. Pass `--why-suggested` and show it in your reply so they can correct it later.
+- **Repo**: the local clone at `$GOLDEN_REPO`. Unset → ask for the path once. That's the only question.
 - The golden repo is **public**. Anything you commit is published, so treat redaction as the gate.
 
 ## Capture with the script
@@ -22,7 +24,7 @@ subagent traffic. It stops before the first `/golden` prompt, redacts the home d
 token-shaped strings, and writes `sessions/<YYYY-MM-DD>-<slug>/session.md` with the frontmatter below.
 
 ```sh
-python3 <skill-dir>/scripts/golden.py --why "<user's words>" --title "<what the session found>" \
+python3 <skill-dir>/scripts/golden.py --why "<user's words or your suggestion>" [--why-suggested] --title "<what the session found>" \
   --labels a,b --golden-turns 4,8 [--mode skill:x] [--thread slug] [--until N] [--pr]
 ```
 
@@ -37,7 +39,8 @@ python3 <skill-dir>/scripts/golden.py --why "<user's words>" --title "<what the 
 schema: 1
 id: <YYYY-MM-DD>-<slug>
 title: <one line: what the session found>
-why: "<the user's words, verbatim>"
+why: "<the user's words verbatim, or your suggestion>"
+why_source: <user | suggested>
 harness: <the agent's name>
 harness_version: <x.y.z, if known>
 model: <model id>

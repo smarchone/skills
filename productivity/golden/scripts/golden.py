@@ -7,7 +7,7 @@ as written, not recalled. Keeps what the user saw: their prompts, the assistant'
 subagent traffic. Redacts the home dir, emails and token-shaped strings.
 
 Usage:
-  golden.py [SESSION] --repo DIR --why "..." --title "..." [--slug S] [--labels a,b] [--golden-turns 4,8]
+  golden.py [SESSION] --repo DIR --why "..." [--why-suggested] --title "..." [--slug S] [--labels a,b] [--golden-turns 4,8]
             [--mode skill:x] [--until N] [--pr]
 
 SESSION is a .jsonl path or a session id; omitted, it's the newest session for the current directory.
@@ -139,6 +139,7 @@ def main():
     ap.add_argument("session", nargs="?")
     ap.add_argument("--repo", default=os.environ.get("GOLDEN_REPO"), help="golden repo clone (default $GOLDEN_REPO)")
     ap.add_argument("--why", required=True)
+    ap.add_argument("--why-suggested", action="store_true", help="the why was drafted by the agent, not the user")
     ap.add_argument("--title", required=True)
     ap.add_argument("--slug")
     ap.add_argument("--labels", default="")
@@ -168,6 +169,7 @@ def main():
     body = "".join(f"### {i} · **{r}:**\n\n{redact(t)}\n\n" for i, (r, t) in enumerate(turns, 1))
     fm = frontmatter({
         "schema": 1, "id": sid, "title": a.title, "why": a.why,
+        "why_source": "suggested" if a.why_suggested else "user",
         "harness": "claude-code", "harness_version": meta.get("version"), "model": meta.get("model"),
         "session_id": meta.get("session_id"), "source_path": redact(path), "started": meta.get("started"),
         "captured": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "cwd": redact(meta.get("cwd") or ""),
