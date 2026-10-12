@@ -17,7 +17,7 @@ Transcripts are cheap; the user's **why** is the asset.
 written, not recalled. It keeps what the user saw: prompts, replies, `[ran: …]` per tool call,
 `[asked: …]` / `[answered: …]`. It drops reasoning, system prompts, tool output and subagents, stops
 before the first `/golden` prompt, redacts home dir, emails and tokens, and writes
-`sessions/<YYYY-MM-DD>-<slug>/session.md` with the frontmatter below.
+`<YYYY-MM>/<YYYY-MM-DD>-<slug>.md` with the frontmatter below.
 
 ```sh
 python3 <skill-dir>/scripts/golden.py --why "…" [--why-suggested] --title "<what the session found>" \
@@ -26,7 +26,7 @@ python3 <skill-dir>/scripts/golden.py --why "…" [--why-suggested] --title "<wh
 
 1. **Run without `--pr`.** Defaults to the newest session for the cwd; pass an id or `.jsonl` path otherwise. Reuse labels already in the repo.
 2. **Read it before publishing.** The repo is **public**. Check the cut point, redact what the regex missed (secrets, private names, client details) as `<redacted>`, pick `golden_turns`, and tell the user what you redacted.
-3. **Publish** with `--pr`: a `golden/<id>` branch with only `session.md`, a PR with the why as body, squash-merged at once (Revert undoes it). Return the PR link.
+3. **Publish** with `--pr`: a `golden/<id>` branch with only that file, a PR with the why as body, squash-merged at once (Revert undoes it). Return the PR link.
 
 No log or no script (another harness, or running as a command) → stop and say so. Never write the turns yourself.
 

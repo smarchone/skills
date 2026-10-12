@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract the visible conversation from a Claude Code session log as a golden session.md.
+"""Extract the visible conversation from a Claude Code session log as a golden session file.
 
 Reads the JSONL transcript Claude Code writes under ~/.claude/projects/, so the turns come out exactly
 as written, not recalled. Keeps what the user saw: their prompts, the assistant's replies, and one
@@ -12,7 +12,7 @@ Usage:
 
 SESSION is a .jsonl path or a session id; omitted, it's the newest session for the current directory.
 Turns stop before the first /golden prompt (or the last prompt, if none) unless --until N. Writes
-<repo>/sessions/<date>-<slug>/session.md; --pr also opens a PR with it and squash-merges it. Stdlib only.
+<repo>/<YYYY-MM>/<YYYY-MM-DD>-<slug>.md; --pr also opens a PR with it and squash-merges it. Stdlib only.
 """
 import argparse, datetime, glob, json, os, re, subprocess, sys
 
@@ -178,7 +178,7 @@ def main():
         "labels": [x.strip() for x in a.labels.split(",") if x.strip()], "thread": a.thread, "status": "raw",
     })
 
-    out = os.path.join(a.repo, "sessions", sid, "session.md")
+    out = os.path.join(a.repo, sid[:7], sid + ".md")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     open(out, "w", encoding="utf-8").write(fm + "\n" + body.rstrip() + "\n")
     print(f"wrote {out} ({len(turns)} turns, {redactions} redactions)", file=sys.stderr)
