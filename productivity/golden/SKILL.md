@@ -17,14 +17,16 @@ zone for golden sessions. Transcripts are cheap; the user's **why** is the asset
 - Check `gh repo view --json visibility` says `PRIVATE`. If not, stop. Never write anywhere public.
 
 ## Capture
-1. **Locate the transcript.** Claude Code: `~/.claude/projects/<cwd with / → ->/${CLAUDE_SESSION_ID}.jsonl`.
-   Other harness → find its native session file; can't → say so and stop.
-2. **Cut at `/golden`.** Leave out the turn that ran this skill and anything after it.
-3. **Redact**: keys, tokens, emails → `<redacted>`; home dir → `~`. Say what you redacted.
-4. **Write** `sessions/<YYYY-MM-DD>-<slug>/session.md`: frontmatter below, then the conversation as
-   `**user:**` / `**assistant:**` turns, text only, in full. Tool calls collapse to one line each:
-   `[ran: <what>]`. Number the turns. This file is the record; the raw transcript stays local and isn't committed.
-5. **PR.** Branch `golden/<id>`, commit, push, `gh pr create` with the why as the body. Return the PR link.
+Works in any agent: write the conversation from your own context window. Don't go looking for the harness's
+session files.
+1. **Write it out verbatim.** Every turn as `**user:**` / `**assistant:**`, numbered, in the words actually
+   used. Don't summarize or tidy. Text only; a tool call becomes one line: `[ran: <what>]`.
+2. **Stop at `/golden`.** Leave out the turn that ran this skill and anything after it.
+3. **Be honest about gaps.** Earlier turns compacted or dropped from context → write what you have, mark the
+   gap as `[… turns n–m not in context …]`, and set `complete: false`.
+4. **Redact**: keys, tokens, emails → `<redacted>`; home dir → `~`. Say what you redacted.
+5. **Write** `sessions/<YYYY-MM-DD>-<slug>/session.md`: frontmatter below, then the turns.
+6. **PR.** Branch `golden/<id>`, commit, push, `gh pr create` with the why as the body. Return the PR link.
 
 ## Frontmatter
 ```yaml
@@ -34,15 +36,15 @@ id: <YYYY-MM-DD>-<slug>
 title: <one line: what the session found>
 why: "<the user's words, verbatim>"
 harness: <claude-code | codex | …>
-harness_version: <x.y.z>
+harness_version: <x.y.z, if known>
 model: <model id>
-session_id: <native id>
-source_path: <path to the native file, with ~>  # best-effort; the harness may delete it
-started: <ISO ts>
+session_id: <native id, if known>
+started: <ISO ts, if known>
 captured: <ISO ts>
 cwd: <with ~>
 mode: <skill or persona that shaped it, if any>
 turns: <n>
+complete: <true | false>
 golden_turns: [<turns where the insight landed>]
 labels: [<reuse labels already in the repo before inventing new ones>]
 thread: <slug of the idea arc, if it continues an earlier session>
