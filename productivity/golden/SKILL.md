@@ -1,6 +1,6 @@
 ---
 name: golden
-description: Saves the current conversation as a golden session — the raw transcript plus a short normalized copy with metadata — and opens a PR to your private golden repo.
+description: Saves the current conversation as a golden session — the text of every turn plus metadata — and opens a PR to your private golden repo.
 user-invocable: true
 disable-model-invocation: true
 argument-hint: "[why this session mattered]"
@@ -20,11 +20,10 @@ zone for golden sessions. Transcripts are cheap; the user's **why** is the asset
 1. **Locate the transcript.** Claude Code: `~/.claude/projects/<cwd with / → ->/${CLAUDE_SESSION_ID}.jsonl`.
    Other harness → find its native session file; can't → say so and stop.
 2. **Cut at `/golden`.** Leave out the turn that ran this skill and anything after it.
-3. **Redact** in both files: keys, tokens, emails → `<redacted>`; home dir → `~`. Say what you redacted.
-4. **Write** `sessions/<YYYY-MM-DD>-<slug>/`:
-   - `raw.<native ext>`: the redacted native file, otherwise untouched.
-   - `session.md`: frontmatter below, then the conversation as `**user:**` / `**assistant:**` turns,
-     text only. Tool calls collapse to one line each: `[ran: <what>]`. Number the turns.
+3. **Redact**: keys, tokens, emails → `<redacted>`; home dir → `~`. Say what you redacted.
+4. **Write** `sessions/<YYYY-MM-DD>-<slug>/session.md`: frontmatter below, then the conversation as
+   `**user:**` / `**assistant:**` turns, text only, in full. Tool calls collapse to one line each:
+   `[ran: <what>]`. Number the turns. This file is the record; the raw transcript stays local and isn't committed.
 5. **PR.** Branch `golden/<id>`, commit, push, `gh pr create` with the why as the body. Return the PR link.
 
 ## Frontmatter
@@ -38,7 +37,7 @@ harness: <claude-code | codex | …>
 harness_version: <x.y.z>
 model: <model id>
 session_id: <native id>
-source_path: <path to the native file, with ~>
+source_path: <path to the native file, with ~>  # best-effort; the harness may delete it
 started: <ISO ts>
 captured: <ISO ts>
 cwd: <with ~>
