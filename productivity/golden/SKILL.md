@@ -1,33 +1,35 @@
 ---
 name: golden
-description: Saves the current conversation as a golden session — the visible messages (no reasoning or hidden prompts) plus metadata — and opens a PR to your private golden repo. Use only when the user asks to save the session as golden.
+description: Saves the current conversation as a golden session — the visible messages (no reasoning or hidden prompts), extracted from the session log by a script, plus metadata — and merges it into your public golden repo as one PR. Use only when the user asks to save the session as golden.
 ---
 
 # Golden
 
-You're mid-conversation and it's gold. Capture it in seconds: a PR to a **private** repo, the landing
-zone for golden sessions. Transcripts are cheap; the user's **why** is the asset.
+You're mid-conversation and it's gold. Capture it in seconds: one merged PR to the golden repo, the landing zone
+for golden sessions. Transcripts are cheap; the user's **why** is the asset.
 
 ## Ask at most one thing
 - **Why** this session mattered: take it from the user's request. Missing → ask once, in one line. Nothing else is a question; fill the rest yourself.
 - **Repo**: the local clone at `$GOLDEN_REPO`. Unset → ask for the path once.
-- Check `gh repo view --json visibility` says `PRIVATE`. If not, stop. Never write anywhere public.
+- The golden repo is **public**. Anything you commit is published, so treat redaction as the gate.
 
-## Capture
-Record the **visible chat** only: the messages the user typed and the replies they saw on screen. It's a
-notes-style record for the user, like copying a chat log.
-- **Include:** the user's messages and the final replies shown to them, kept as written.
-- **Exclude:** internal reasoning or thinking, system or developer prompts, hidden instructions, raw tool
-  output, and anything else the user didn't see. If unsure whether something was visible, leave it out.
+## Capture with the script
+`scripts/golden.py` (next to this file, stdlib only) reads the session's own JSONL log under
+`~/.claude/projects/`. The turns come out exactly as written, not recalled. It keeps only the visible
+chat: the user's prompts, the replies they saw, a `[ran: …]` line per tool call, and `[asked: …]` /
+`[answered: …]` for questions. It drops thinking, system reminders, skill bodies, tool output and
+subagent traffic. It stops before the first `/golden` prompt, redacts the home dir, emails and
+token-shaped strings, and writes `sessions/<YYYY-MM-DD>-<slug>/session.md` with the frontmatter below.
 
-1. **Write the turns.** Number each one as `**user:**` / `**assistant:**`, keeping the wording the user saw.
-   A tool call the user saw becomes one line: `[ran: <what>]`.
-2. **Stop before the request to save.** Leave out that turn and anything after it.
-3. **Be honest about gaps.** Can't recall earlier turns → write what you have, mark the gap as
-   `[… turns n–m not available …]`, and set `complete: false`.
-4. **Redact**: keys, tokens, emails → `<redacted>`; home dir → `~`. Say what you redacted.
-5. **Write** `sessions/<YYYY-MM-DD>-<slug>/session.md`: frontmatter below, then the turns.
-6. **PR.** Branch `golden/<id>`, commit, push, `gh pr create` with the why as the body. Return the PR link.
+```sh
+python3 <skill-dir>/scripts/golden.py --why "<user's words>" --title "<what the session found>" \
+  --labels a,b --golden-turns 4,8 [--mode skill:x] [--thread slug] [--until N] [--pr]
+```
+
+1. **Run it without `--pr`.** It picks the newest session for the cwd; pass a session id or `.jsonl` path if that's wrong. Reuse labels already in the repo.
+2. **Read the file before publishing.** Check the cut point. Look for secrets, private names or client details the regex missed, and replace them with `<redacted>`. Pick `golden_turns` from the numbered turns. Tell the user what you redacted.
+3. **No log** (another harness, or the file is gone) → write the turns yourself in the same format, mark gaps as `[… turns n–m not available …]`, and set `complete: false`.
+4. **Publish**: rerun with `--pr`. It branches `golden/<id>` off the default branch, commits only the new `session.md`, opens a PR with the why as the body, and squash-merges it straight away. Undo a session with the PR's Revert button. Return the PR link.
 
 ## Frontmatter
 ```yaml
@@ -40,6 +42,7 @@ harness: <the agent's name>
 harness_version: <x.y.z, if known>
 model: <model id>
 session_id: <native id, if known>
+source_path: <the .jsonl it came from, with ~>
 started: <ISO ts, if known>
 captured: <ISO ts>
 cwd: <with ~>
