@@ -1,0 +1,52 @@
+---
+name: golden
+description: Saves the current conversation as a golden session — the raw transcript plus a short normalized copy with metadata — and opens a PR to your private golden repo.
+user-invocable: true
+disable-model-invocation: true
+argument-hint: "[why this session mattered]"
+---
+
+# Golden
+
+You're mid-conversation and it's gold. Capture it in seconds: a PR to a **private** repo, the landing
+zone for golden sessions. Transcripts are cheap; the user's **why** is the asset.
+
+## Ask at most one thing
+- **Why** is the argument. Missing → ask once, in one line. Nothing else is a question; fill the rest yourself.
+- **Repo**: the local clone at `$GOLDEN_REPO`. Unset → ask for the path once.
+- Check `gh repo view --json visibility` says `PRIVATE`. If not, stop. Never write anywhere public.
+
+## Capture
+1. **Locate the transcript.** Claude Code: `~/.claude/projects/<cwd with / → ->/${CLAUDE_SESSION_ID}.jsonl`.
+   Other harness → find its native session file; can't → say so and stop.
+2. **Cut at `/golden`.** Leave out the turn that ran this skill and anything after it.
+3. **Redact** in both files: keys, tokens, emails → `<redacted>`; home dir → `~`. Say what you redacted.
+4. **Write** `sessions/<YYYY-MM-DD>-<slug>/`:
+   - `raw.<native ext>`: the redacted native file, otherwise untouched.
+   - `session.md`: frontmatter below, then the conversation as `**user:**` / `**assistant:**` turns,
+     text only. Tool calls collapse to one line each: `[ran: <what>]`. Number the turns.
+5. **PR.** Branch `golden/<id>`, commit, push, `gh pr create` with the why as the body. Return the PR link.
+
+## Frontmatter
+```yaml
+---
+schema: 1
+id: <YYYY-MM-DD>-<slug>
+title: <one line: what the session found>
+why: "<the user's words, verbatim>"
+harness: <claude-code | codex | …>
+harness_version: <x.y.z>
+model: <model id>
+session_id: <native id>
+source_path: <path to the native file, with ~>
+started: <ISO ts>
+captured: <ISO ts>
+cwd: <with ~>
+mode: <skill or persona that shaped it, if any>
+turns: <n>
+golden_turns: [<turns where the insight landed>]
+labels: [<reuse labels already in the repo before inventing new ones>]
+thread: <slug of the idea arc, if it continues an earlier session>
+status: raw
+---
+```
