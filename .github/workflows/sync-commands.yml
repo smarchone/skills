@@ -1,0 +1,40 @@
+name: sync commands
+
+# Regenerates commands/ from the skills and commits the result to the PR branch.
+on:
+  pull_request:
+    paths:
+      - "*/*/SKILL.md"
+      - "commands/**"
+      - "tools/skills2commands.py"
+      - ".github/workflows/sync-commands.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+
+      - name: Regenerate commands/
+        run: python3 tools/skills2commands.py
+
+      # Fork PRs can't be pushed to with GITHUB_TOKEN, so fail them instead.
+      - name: Fail fork PRs that are out of sync
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: git diff --exit-code -- commands/ || { echo "::error::commands/ is out of date; run python3 tools/skills2commands.py"; exit 1; }
+
+      - name: Commit to the PR branch
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git add -A commands/
+          git diff --cached --quiet && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "commands: regenerate from skills"
+          git push
