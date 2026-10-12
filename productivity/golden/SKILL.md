@@ -1,51 +1,56 @@
 ---
 name: golden
-description: Saves the current conversation as a golden session — the visible messages (no reasoning or hidden prompts) plus metadata — and opens a PR to your private golden repo. Use only when the user asks to save the session as golden.
+description: Saves the current conversation as a golden session — the visible messages (no reasoning or hidden prompts), extracted from the session log by a script, plus metadata — and merges it into your public golden repo as one PR. Use only when the user asks to save the session as golden.
 ---
 
 # Golden
 
-You're mid-conversation and it's gold. Capture it in seconds: a PR to a **private** repo, the landing
-zone for golden sessions. Transcripts are cheap; the user's **why** is the asset.
+You're mid-conversation and it's gold. Capture it in seconds as one merged PR to the golden repo.
+Transcripts are cheap; the user's **why** is the asset.
 
-## Ask at most one thing
-- **Why** this session mattered: take it from the user's request. Missing → ask once, in one line. Nothing else is a question; fill the rest yourself.
-- **Repo**: the local clone at `$GOLDEN_REPO`. Unset → ask for the path once.
-- Check `gh repo view --json visibility` says `PRIVATE`. If not, stop. Never write anywhere public.
+## Don't ask
+- **Why** it mattered: the user's words from the request, verbatim. None given → write one line in their
+  voice naming the insight they'd want to find again (not the topic), pass `--why-suggested`, and show it.
+- **Repo**: `$GOLDEN_REPO`. Unset → ask for the path. That's the only question.
 
 ## Capture
-Record the **visible chat** only: the messages the user typed and the replies they saw on screen. It's a
-notes-style record for the user, like copying a chat log.
-- **Include:** the user's messages and the final replies shown to them, kept as written.
-- **Exclude:** internal reasoning or thinking, system or developer prompts, hidden instructions, raw tool
-  output, and anything else the user didn't see. If unsure whether something was visible, leave it out.
+`scripts/golden.py` (next to this file) reads the session's JSONL log, so turns come out exactly as
+written, not recalled. It keeps what the user saw: prompts, replies, `[ran: …]` per tool call,
+`[asked: …]` / `[answered: …]`. It drops reasoning, system prompts, tool output and subagents, stops
+before the first `/golden` prompt, redacts home dir, emails and tokens, and writes
+`sessions/<YYYY-MM-DD>-<slug>/session.md` with the frontmatter below.
 
-1. **Write the turns.** Number each one as `**user:**` / `**assistant:**`, keeping the wording the user saw.
-   A tool call the user saw becomes one line: `[ran: <what>]`.
-2. **Stop before the request to save.** Leave out that turn and anything after it.
-3. **Be honest about gaps.** Can't recall earlier turns → write what you have, mark the gap as
-   `[… turns n–m not available …]`, and set `complete: false`.
-4. **Redact**: keys, tokens, emails → `<redacted>`; home dir → `~`. Say what you redacted.
-5. **Write** `sessions/<YYYY-MM-DD>-<slug>/session.md`: frontmatter below, then the turns.
-6. **PR.** Branch `golden/<id>`, commit, push, `gh pr create` with the why as the body. Return the PR link.
+```sh
+python3 <skill-dir>/scripts/golden.py --why "…" [--why-suggested] --title "<what the session found>" \
+  --labels a,b --golden-turns 4,8 [--mode skill:x] [--thread slug] [--until N] [--pr]
+```
+
+1. **Run without `--pr`.** Defaults to the newest session for the cwd; pass an id or `.jsonl` path otherwise. Reuse labels already in the repo.
+2. **Read it before publishing.** The repo is **public**. Check the cut point, redact what the regex missed (secrets, private names, client details) as `<redacted>`, pick `golden_turns`, and tell the user what you redacted.
+3. **Publish** with `--pr`: a `golden/<id>` branch with only `session.md`, a PR with the why as body, squash-merged at once (Revert undoes it). Return the PR link.
+
+No log or no script (another harness, or running as a command) → stop and say so. Never write the turns yourself.
 
 ## Frontmatter
+The script fills it; you supply title, why, labels, golden turns, mode and thread.
 ```yaml
 ---
 schema: 1
 id: <YYYY-MM-DD>-<slug>
 title: <one line: what the session found>
-why: "<the user's words, verbatim>"
+why: "<the user's words verbatim, or your suggestion>"
+why_source: <user | suggested>
 harness: <the agent's name>
-harness_version: <x.y.z, if known>
+harness_version: <x.y.z>
 model: <model id>
-session_id: <native id, if known>
-started: <ISO ts, if known>
+session_id: <native id>
+source_path: <the .jsonl it came from, with ~>
+started: <ISO ts>
 captured: <ISO ts>
 cwd: <with ~>
 mode: <skill or persona that shaped it, if any>
 turns: <n>
-complete: <true | false>
+complete: true
 golden_turns: [<turns where the insight landed>]
 labels: [<reuse labels already in the repo before inventing new ones>]
 thread: <slug of the idea arc, if it continues an earlier session>
