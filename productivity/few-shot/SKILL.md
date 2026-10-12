@@ -32,24 +32,29 @@ Two modes, same shots. **Distilled is the default.** Give **Detailed** when the 
 ("detailed", "elaborate", "go deeper", "full version").
 
 ### Distilled (default)
-One table, one row per shot, each cell a short phrase. Scannable in seconds; cut words, not insight.
-Keep artifacts tiny: an inline command, prompt, or config line, in `code` when it is code.
+One table, one row per shot. Scannable in seconds; cut words, not insight. Write cells as short plain
+sentences, not shorthand. Keep artifacts tiny: an inline command, prompt, or config line, in `code` when it is code.
+The rule section is plain English: each bullet is a bold rule, then one short sentence on what it means for you.
 
 ````text
-# <Target> in <N> shots
+# <Target>, distilled
 <one line: what it is, at most 15 words>
 
-| # | Type | You do | It does | Lesson |
-|---|---|---|---|---|
-| 1 | <type> | <the input, a few words or `inline code`> | <what happens> | <the one thing it teaches> |
+## The <N> shots
 
-## Pattern
-- **<Label>:** <a few words>   (3-4 bullets)
+| # | Situation | What happens | Lesson |
+|---|---|---|---|
+| 1 | <the input or setup, a sentence or `inline code`> | <what happens> | <the one thing it teaches> |
 
-**Not yet:** <the rest of the map, one line>
+## The rule
+- **<Rule in a few words>.** <what it means in practice, one short sentence>   (3-5 bullets)
 
 ## Your turn
-<one held-out case in one or two lines. Don't give the answer>
+<one held-out case in one or two lines>
+
+**<the question the user should answer>** (don't give the answer)
+
+*Say **more** for: <the rest of the map>.*
 ````
 
 ### Detailed (on request)
@@ -82,6 +87,6 @@ Covered: <abstractions the shots hit> · Not yet: <the rest of the map>
 
 ## Follow-ups
 User replies with a prediction → give the answer and say which shot it follows from.
-Asked for more → scale up: write more shots aimed at the **Not yet** list (not variations on covered
+Asked for more → scale up: write more shots aimed at the **more** / **Not yet** list (not variations on covered
 ground), and update Coverage until the map is done.
 Offer: the detailed version, more shots, or a harder held-out case.
