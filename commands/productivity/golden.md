@@ -29,7 +29,7 @@ python3 <skill-dir>/scripts/golden.py --why "<user's words or your suggestion>" 
 
 1. **Run it without `--pr`.** It picks the newest session for the cwd; pass a session id or `.jsonl` path if that's wrong. Reuse labels already in the repo.
 2. **Read the file before publishing.** Check the cut point. Look for secrets, private names or client details the regex missed, and replace them with `<redacted>`. Pick `golden_turns` from the numbered turns. Tell the user what you redacted.
-3. **No log** (another harness, or the file is gone) → write the turns yourself in the same format, mark gaps as `[… turns n–m not available …]`, and set `complete: false`.
+3. **No log** (another harness, or the file is gone) → stop and tell the user. Never write the turns yourself.
 4. **Publish**: rerun with `--pr`. It branches `golden/<id>` off the default branch, commits only the new `session.md`, opens a PR with the why as the body, and squash-merges it straight away. Undo a session with the PR's Revert button. Return the PR link.
 
 ## Frontmatter
