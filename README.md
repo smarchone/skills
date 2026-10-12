@@ -57,3 +57,14 @@ npx skills add smarchone/skills/<group>/<skill>
 ```
 
 Each group README lists the exact install commands.
+
+### As slash commands
+
+`commands/` mirrors every skill as a Claude Code command, grouped the same way
+(`/productivity:intuition`, `/systems:rebuild`, ...). Copy it into `~/.claude/commands/`
+or a project's `.claude/commands/`. Regenerate after editing a skill:
+
+```sh
+python3 tools/skills2commands.py          # rebuild commands/
+python3 tools/skills2commands.py --check  # verify it is in sync
+```
