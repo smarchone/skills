@@ -26,6 +26,33 @@ rule, the way a model learns from a few shots.
 - **Show, then label.** Give the input and what happens first. The takeaway comes after, in one line.
 
 ## Output
+Two modes, same shots. **Distilled is the default.** Give **Detailed** when the user asks for it
+("detailed", "elaborate", "go deeper", "full version").
+
+### Distilled (default)
+One table, one row per shot, each cell a short phrase. Scannable in seconds; cut words, not insight.
+Keep artifacts tiny: an inline command, prompt, or config line, in `code` when it is code.
+
+````text
+# <Target> in <N> shots
+<one line: what it is, at most 15 words>
+
+| # | Type | You do | It does | Lesson |
+|---|---|---|---|---|
+| 1 | <type> | <the input, a few words or `inline code`> | <what happens> | <the one thing it teaches> |
+
+## Pattern
+- **<Label>:** <a few words>   (3-4 bullets)
+
+**Not yet:** <the rest of the map, one line>
+
+## Your turn
+<one held-out case in one or two lines. Don't give the answer>
+````
+
+### Detailed (on request)
+Each shot gets its own section with a full artifact (real code, traces, numbers), so you can show more
+than a table cell holds.
 
 ````text
 # <Target> in <N> shots
@@ -55,4 +82,4 @@ Covered: <abstractions the shots hit> · Not yet: <the rest of the map>
 User replies with a prediction → give the answer and say which shot it follows from.
 Asked for more → scale up: write more shots aimed at the **Not yet** list (not variations on covered
 ground), and update Coverage until the map is done.
-Offer: more shots, or a harder held-out case.
+Offer: the detailed version, more shots, or a harder held-out case.
