@@ -14,6 +14,9 @@ As skills, one at a time:
 
 ```sh
 npx skills add smarchone/skills/<group>/<skill>
+
+# must try
+npx skills add smarchone/skills/productivity/intuition-panel
 ```
 
 ## Conversations worth keeping
