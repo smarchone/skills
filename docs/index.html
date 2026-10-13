@@ -115,8 +115,10 @@
     .flow span { color:var(--dim); border:1px solid var(--line); border-radius:999px; padding:8px 12px; }
     .flow span.gold { color:var(--accent); border-color:rgba(222,138,104,.45); background:var(--accent-soft); }
     .flow span.end { color:var(--white); }
-    .flow a { color:var(--dim); margin-left:auto; text-decoration:none; }
-    .flow a:hover { color:var(--accent); }
+    .flow a.end { color:var(--white); border:1px solid var(--line); border-radius:999px; padding:8px 12px; text-decoration:none; transition:color .15s, border-color .15s; }
+    .flow a.end:hover { color:var(--accent); border-color:var(--accent); }
+    .flow a.gh { color:var(--dim); margin-left:auto; text-decoration:none; }
+    .flow a.gh:hover { color:var(--accent); }
 
     .eyebrow { font:600 12px/1 var(--mono); color:var(--faint); text-transform:uppercase; letter-spacing:.12em; margin:0 0 14px; }
 
@@ -129,7 +131,7 @@
       .picker .div { display:none; }
       .picker .grp { width:100%; }
       .pitch { grid-template-columns:minmax(0, 1fr); }
-      .flow a { margin-left:0; width:100%; }
+      .flow a.gh { margin-left:0; width:100%; }
     }
   </style>
 </head>
@@ -153,7 +155,7 @@
     <div><span class="lbl">Panels</span><h2>Brainstorm with a founding team.</h2><p>A CEO, PM and Architect push your idea from three sides, a line or two each.</p></div>
     <div><span class="lbl">Golden conversations</span><h2>One command. A library you can share.</h2><p>Save the session and why it mattered to your public repo, one PR each.</p></div>
   </section>
-  <p class="flow"><span>report or panel</span>→<span>a session worth keeping</span>→<span class="gold">/golden</span>→<span class="end">shared library</span><a href="https://github.com/smarchone/skills">GitHub →</a></p>
+  <p class="flow"><span>report or panel</span>→<span>a session worth keeping</span>→<span class="gold">/golden</span>→<a class="end" href="https://smarchone.github.io/golden-convo/" title="Browse the library: smarchone.github.io/golden-convo">shared library ↗</a><a class="gh" href="https://github.com/smarchone/skills">GitHub →</a></p>
 
   <p class="eyebrow">See a real session</p>
   <nav class="picker" id="picker"></nav>
