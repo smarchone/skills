@@ -16,13 +16,15 @@ As skills, one at a time:
 npx skills add smarchone/skills/<group>/<skill>
 ```
 
-## The problem
+## Conversations worth keeping
+
+### The problem
 
 - Every new topic, you type the same "explain it like…" prompts to Claude again.
 - The angle that makes it click is luck. Most chats never get there.
 - When one does, it's lost in your terminal history. Nobody else ever reads it.
 
-## Conversations worth keeping
+### The flow
 
 Reports and panels turn a session into something worth reading. [`/golden`](productivity/golden/SKILL.md)
 saves it, and the saved sessions become a blog.
