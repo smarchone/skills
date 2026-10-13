@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Few-shot : Grok Bot</title>
+  <style>
+    :root { --bg:#121212; --fg:#cfcfcf; --dim:#8a8a8a; --accent:#d97757; --line:#333; --code:#1c1c1c; }
+    body { background:var(--bg); color:var(--fg); margin:0; padding:24px 16px; }
+    main { max-width:720px; margin:0 auto; font:14px/1.75 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    header { color:var(--dim); border:1px solid var(--line); border-radius:6px; padding:8px 12px; margin-bottom:24px; }
+    .turn { margin-bottom:32px; }
+    .prompt { background:#1c1c1c; padding:8px 12px; border-radius:6px; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .prompt summary { cursor:pointer; }
+    .dim { color:var(--dim); }
+    .md { overflow-wrap:anywhere; }
+    .md p, .md ul, .md ol { margin:0 0 1em; }
+    .md li { margin:.3em 0; }
+    .md strong { color:#fff; }
+    .md pre.raw { white-space:pre-wrap; font:inherit; margin:16px 0; }
+    .md h1, .md h2, .md h3, .md h4 { font-size:1em; color:var(--accent); margin:1.4em 0 .4em; }
+    .md table { border-collapse:collapse; width:100%; margin:12px 0; display:block; overflow-x:auto; }
+    .md th, .md td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+    .md th { background:#141414; }
+    .md code { background:var(--code); padding:1px 4px; border-radius:3px; }
+    .md pre { background:var(--code); padding:10px 12px; border-radius:6px; overflow-x:auto; }
+    .md pre code { background:none; padding:0; }
+    .md a { color:var(--accent); }
+    .md hr { border:0; border-top:1px solid var(--line); }
+    .tool { color:var(--dim); margin:8px 0; }
+    .tool pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:320px; overflow:auto; background:var(--code); padding:8px; }
+    .done { color:var(--dim); margin-top:12px; }
+    .back { display:inline-block; color:var(--accent); font-size:1.15em; font-weight:600; text-decoration:none; margin:0 0 12px; }
+    .back:hover { text-decoration:underline; }
+    .back.bottom { margin:24px 0 0; }
+    .minimap { display:none; position:fixed; top:24px; right:16px; width:180px; max-height:calc(100vh - 48px); overflow-y:auto; opacity:.35; transition:opacity .2s; font:11px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    @media (min-width:1180px) { .minimap { display:block; } }
+    .minimap a { display:block; color:var(--dim); text-decoration:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:1px 0; }
+    .minimap:hover { opacity:1; }
+    .minimap a.p { margin-top:8px; }
+    .minimap a.h2 { padding-left:8px; }
+    .minimap a.h3 { padding-left:16px; }
+    .minimap a.on { color:var(--fg); }
+    .minimap a:hover { color:var(--accent); }
+    [id^="mm-"] { scroll-margin-top:16px; }
+  </style>
+</head>
+<body>
+<main>
+<a class="back" href="index.html">← Examples</a>
+<header><div>Claude Code 2.1.296</div><div>claude-opus-5-5</div><div>~/demo</div></header>
+<section class="turn"><div class="prompt">❯ /productivity:few-shot grok bot (xAI&#x27;s agent). It&#x27;s new, look it up first.</div>
+<details class="tool"><summary>⏺ ToolSearch(select:WebSearch,WebFetch)</summary><pre></pre></details>
+<details class="tool"><summary>⏺ WebSearch(xAI Grok agent bot launch 2026)</summary><pre>Web search results for query: &quot;xAI Grok agent bot launch 2026&quot;
+
+Links: [{&quot;title&quot;:&quot;Grok Bot for Enterprise AI Agents: The 2026 Reality&quot;,&quot;url&quot;:&quot;https://beam.ai/agentic-insights/grok-bot-enterprise-ai-agents&quot;},{&quot;title&quot;:&quot;Grok Build&quot;,&quot;url&quot;:&quot;https://en.wikipedia.org/wiki/Grok_Build&quot;},{&quot;title&quot;:&quot;Grok Bot: xAI&#x27;s AI Teammates Get Their Own Computer&quot;,&quot;url&quot;:&quot;https://www.digitalapplied.com/blog/grok-bot-ai-teammates-launch-cloud-computer-2026&quot;},{&quot;title&quot;:&quot;Grok Bot: Always-On Agent Compute and the Infrastructure ...&quot;,&quot;url&quot;:&quot;https://650group.com/blog/grok-bot-always-on-agent-compute/&quot;},{&quot;title&quot;:&quot;What Is Grok Bot? xAI&#x27;s New AI Agent, Explained&quot;,&quot;url&quot;:&quot;https://www.layer3labs.io/guides/what-is-grok-bot&quot;},{&quot;title&quot;:&quot;Grok Bot Explained: xAI&#x27;s AI Agents (2026)&quot;,&quot;url&quot;:&quot;https://toolradar.com/blog/what-is-grok-bot&quot;},{&quot;title&quot;:&quot;Grok Bot Explained: xAI&#x27;s Fleet of Autonomous Cloud Agents&quot;,&quot;url&quot;:&quot;https://www.tryfriday.ai/blog/grok-bot-launch&quot;},{&quot;title&quot;:&quot;What Is Grok Bot? xAI&#x27;s New AI Agent Explained (2026)&quot;,&quot;url&quot;:&quot;https://netalith.com/blogs/ai-tools/what-is-grok-bot&quot;},{&quot;title&quot;:&quot;Grok Bot: xAI&#x27;s Always-On AI Agents, Explained (October 2026) - AIToolsReview&quot;,&quot;url&quot;:&quot;https://aitoolsreview.co.uk/insights/grok-bot-agent-launch&quot;}]
+
+xAI launched Grok Bot in beta on August 11, 2026. It&#x27;s an always-on agent product, not a chatbot. Each Bot gets its own cloud computer, can sign into the tools a user already has, and runs multi-step jobs that pause only when it needs approval. It was first built as an internal prototype that employees used for sales outreach, marketing, onboarding, office operations, and bug fixes before the public beta.
+
+**Access:** Sources differ on pricing and tiers. One says the product is bundled into three existing paid subscription tiers: SuperGrok Heavy, Cursor Ultra, and Cursor Teams Premium. Another puts Cursor Ultra at $200/month and Cursor Teams Premium at $120/seat/month. Enterprise customers are routed to a waitlist.
+
+**Platforms:** Reports differ here too. One says it&#x27;s available on desktop and iOS, with macOS, Windows, and Linux builds posted and Android to follow. Another says Linux, Android, and iPad support are not yet available, with no public timeline.
+
+**Limits:** Coverage notes that there&#x27;s no SOC 2, ISO 27001, GDPR, HIPAA, or FedRAMP claim attached to Grok Bot at launch. One analysis also says xAI&#x27;s docs state that all Bots on an account share one computer and warn not to treat separate Bots as a security boundary.
+
+**Context:** Coverage links the launch to the Cursor deal, with one source noting that in June 2026, SpaceX acquired Cursor. A broader rollout was reportedly tied to the Grok 4.6 model.
+
+
+REMINDER: You MUST include the sources above in your response to the user using markdown hyperlinks.</pre></details>
+<details class="tool"><summary>⏺ WebSearch(&quot;Grok&quot; xAI new agent docs API tools October 2026)</summary><pre>Web search results for query: &quot;&quot;Grok&quot; xAI new agent docs API tools October 2026&quot;
+
+Links: [{&quot;title&quot;:&quot;SpaceXAI Grok Voice Agent API plugin guide&quot;,&quot;url&quot;:&quot;https://docs.livekit.io/agents/models/realtime/plugins/spacexai/&quot;},{&quot;title&quot;:&quot;xAI (Grok) Provider&quot;,&quot;url&quot;:&quot;https://www.promptfoo.dev/docs/providers/xai/&quot;},{&quot;title&quot;:&quot;Tools Overview&quot;,&quot;url&quot;:&quot;https://docs.x.ai/developers/tools/overview&quot;},{&quot;title&quot;:&quot;Grok Build: SpaceXSI&#x27;s Coding Agent - Grok API Documentation&quot;,&quot;url&quot;:&quot;https://docs.x.ai/build/overview&quot;},{&quot;title&quot;:&quot;Multi Agent&quot;,&quot;url&quot;:&quot;https://docs.x.ai/developers/model-capabilities/text/multi-agent&quot;},{&quot;title&quot;:&quot;Grok 4.7 Developer Guide&quot;,&quot;url&quot;:&quot;https://docs.x.ai/developers/grok-4-7&quot;},{&quot;title&quot;:&quot;xAI Grok&quot;,&quot;url&quot;:&quot;https://ai-sdk.dev/providers/ai-sdk-providers/xai&quot;},{&quot;title&quot;:&quot;SpaceXSI API: Grok Models, API Keys &amp; Pricing&quot;,&quot;url&quot;:&quot;https://x.ai/api&quot;},{&quot;title&quot;:&quot;Grok API - Complete Developer Guide&quot;,&quot;url&quot;:&quot;https://agentsapis.com/grok-api/&quot;}]
+
+I found no October 2026 announcement specifically. The results are mostly current xAI developer docs, dated roughly 7 to 88 days old.
+
+- **Grok 4.7 and tools:** The Grok 4.7 guide describes it as a model for coding and agentic work, with function calling, web search, X search, and code execution Value: Function calling , web search , X search , code execution. It&#x27;s served through the Responses API APIs | Responses API.
+- **Tools overview:** The tools docs split tools into built-in server-side tools (web search, X search, code interpreter, image generation, collections search) and custom function calling (Function Calling | Custom functions you define that the model can invoke).
+- **Multi-agent:** A `grok-4.20-multi-agent` model coordinates several agents for multi-step research, and the docs warn that the API interface is not final and may include breaking changes down the line.
+- **Agent Tools and MCP:** A third-party provider doc lists remote MCP server support alongside web, X, and code tools, and says Grok 4.7 and 4.6 accept an xhigh reasoning setting.
+- **Coding agent:** Grok Build is a coding agent that runs as an interactive TUI, headlessly, or over the Agent Client Protocol (ACP) (per the Grok Build docs).
+- **Voice:** A LiveKit plugin guide covers the Grok Voice Agent API, with provider tools for X search, web search, and file search over uploaded collections.
+
+Some sources refer to the company as &quot;SpaceXAI,&quot; so the naming may be in flux. Official reference is at docs.x.ai.
+
+
+REMINDER: You MUST include the sources above in your response to the user using markdown hyperlinks.</pre></details>
+<details class="tool"><summary>⏺ WebSearch(Grok Bot docs x.ai approvals &quot;shared computer&quot; schedules skills)</summary><pre>Web search results for query: &quot;Grok Bot docs x.ai approvals &quot;shared computer&quot; schedules skills&quot;
+
+Links: [{&quot;title&quot;:&quot;# A deep dive into Grok Bot&quot;,&quot;url&quot;:&quot;https://flaviocopes.com/grok-bot.md&quot;},{&quot;title&quot;:&quot;blitzmetrics.com&quot;,&quot;url&quot;:&quot;https://blitzmetrics.com/?p=112349&quot;},{&quot;title&quot;:&quot;# Grok Bot&quot;,&quot;url&quot;:&quot;https://cursor.com/docs/grok-bot.md&quot;},{&quot;title&quot;:&quot;A deep dive into Grok Bot&quot;,&quot;url&quot;:&quot;https://flaviocopes.com/grok-bot/&quot;},{&quot;title&quot;:&quot;Work with Grok Bot&quot;,&quot;url&quot;:&quot;https://docs.x.ai/grok-bot/skills-routines-and-automations&quot;},{&quot;title&quot;:&quot;#### Grok Bot&quot;,&quot;url&quot;:&quot;https://docs.x.ai/grok-bot/overview.md&quot;},{&quot;title&quot;:&quot;grok bot&quot;,&quot;url&quot;:&quot;https://www.skills.sh/andrueandersoncs/skills/grok-bot&quot;},{&quot;title&quot;:&quot;Grok Bot Productivity: Strengths and Limits&quot;,&quot;url&quot;:&quot;https://moclaw.ai/blog/grok-bot-productivity&quot;},{&quot;title&quot;:&quot;new grok bot&quot;,&quot;url&quot;:&quot;https://www.skills.sh/davidondrej/skills/new-grok-bot&quot;}]
+
+The search turned up official xAI docs plus several third-party write-ups. The official pages cover your terms, though I didn&#x27;t get the full approvals page.
+
+**Official docs (docs.x.ai)**
+- **Overview:** Each Bot runs on a persistent cloud VM with a browser, filesystem, and terminal. Bots work through the apps and sites you authorize, and they only come back to you when something needs approval. It has a computer of its own. Each Bot runs on a persistent cloud VM with a browser, filesystem, and terminal.
+- **Skills and routines:** Installed private skills can be turned on per Bot, and you call a saved skill with &quot;/&quot; in the desktop composer. Installed private skills can be enabled per Bot. You can teach a workflow by demonstrating it in the browser. Teaching records visible screen activity for up to ten minutes and does not capture microphone audio. The guide says to test the resulting skill on a safe example before scheduling it. Test it on a safe example before scheduling it.
+
+**Third-party summaries**
+- A MoClaw article says every Bot on one account shares the same computer. It also cites xAI&#x27;s own wording that the per-Bot screens are separate work surfaces, not separate security boundaries, so Bots shouldn&#x27;t be treated as credential isolation. xAI&#x27;s own docs call the per-Bot screens &quot;separate work surfaces, not separate security boundaries,&quot; so do not treat Bots as credential isolation. I couldn&#x27;t confirm that exact wording on the official pages in this search.
+- Its access notes say the desktop app is macOS/Windows only with no Linux app, and that it&#x27;s gated behind certain plans. Routines run on a schedule, but an approval never reverses work already done.
+- A Flavio Copes deep dive describes skills as reusable processes you can schedule, and approvals as rules for actions that need a person.
+
+**Pricing and availability (Cursor mirror of the docs):** Grok Bot runs on macOS, Windows, and iOS and comes with paid individual Cursor plans and Cursor Teams. You can also link a SuperGrok subscription. Grok Bot runs on macOS, Windows, and iOS, and is included with every paid individual Cursor plan and with the Cursor Teams plan.
+
+Caveat: the MoClaw and skills.sh pages are third-party, and I couldn&#x27;t check their plan-access claims against official pricing. The official approvals and shared-computer pages weren&#x27;t fetched directly, so verify those on docs.x.ai before relying on them.
+
+
+REMINDER: You MUST include the sources above in your response to the user using markdown hyperlinks.</pre></details>
+<details class="tool"><summary>⏺ WebFetch(https://www.digitalapplied.com/blog/grok-bot-ai-teammates-launch-cloud-computer-2026)</summary><pre># Grok Bot: Concrete Specifics
+
+**Core abstractions**
+
+- **Bots:** Always-on &quot;AI teammates&quot; you message from desktop or iPhone. They can message each other, share context in threads, and coordinate in group chats.
+- **Computer:** Each account gets one persistent cloud computer with a browser, filesystem, and terminal. Every Bot gets its own screen on it. The docs say all Bots share this machine.
+- **Skills:** A skill &quot;describes how to perform a task.&quot;
+- **Routines:** A routine &quot;assigns a workflow to one Bot and tells it when to run,&quot; on a schedule or, where supported, after an event.
+- **Approvals:** Desktop offers &quot;Allow once,&quot; &quot;Deny,&quot; and &quot;Always allow.&quot; iPhone offers &quot;Approve once&quot; and &quot;Deny.&quot; A model-based Auto Review layer can apply rules, and &quot;Require Approval&quot; rules override &quot;Always Allow&quot; rules.
+- **Local computer access:** A separate setting (Settings → General → Agent → Execution on Local Computer) defaults to &quot;Ask every time.&quot;
+- **Connectors and memory:** The page does not describe either.
+
+**How tasks are assigned**
+
+- You message a Bot like a colleague and hand it a job. It works across apps and inboxes, finishes end to end, and returns only for approval.
+- You can teach a task by showing a Bot a workflow once. It saves the workflow as a routine that takes your corrections. Recordings are capped at 10 minutes.
+- The docs recommend testing a learned skill on a one-off task before turning it into a routine.
+
+**Examples of use (from the launch post)**
+
+- Internal use for sales outbound, marketing campaigns, office operations, and bug fixes.
+- Suggested pilots: CRM updates from call transcripts, invoice processing, and bug triage.
+
+**Limits**
+
+- Each Bot can run one computer-use task on its screen at a time. Parallelism comes from adding Bots.
+- Beta, with enterprise access on a waitlist and gradual team rollout.
+- No usage quota is published. Weekly usage is included, with on-demand usage billed by model and token cost.
+- The underlying model is not named.
+
+**Pricing and access**
+
+- No standalone price. Access comes with SuperGrok Heavy or Cursor&#x27;s top tiers.
+- Cursor Ultra is $200/month, and Cursor&#x27;s own pricing data corroborates this.
+- x.ai lists a &quot;Premium Teams&quot; seat at $120/month. Cursor&#x27;s data lists plain Teams at $40/seat and no matching Premium SKU, so the $120 figure is unverified.
+
+**Platforms**
+
+- Documented: macOS (Apple silicon and Intel), Windows (x64 and Arm64), and iPhone on iOS 18 or later.
+- Linux desktop, Android, and iPad are unsupported at launch per the docs. The download page appears to list a Linux build, which conflicts with the docs.
+
+**Security caveats**
+
+- xAI&#x27;s docs state, on two pages, &quot;Do not use separate Bots as a security boundary.&quot;
+- Files, browser sessions, and CLI credentials are shared across all Bots on an account.
+- Deleting a Bot is soft. It removes the profile, conversation, and routines, but files and logins may remain.
+- Passwords, passkeys, 2FA, CAPTCHAs, and payments hand control to the human. A masked secret request exists for supported connections and is &quot;not a general-purpose password manager.&quot;
+- Data handling follows Cursor&#x27;s account and privacy settings, including training opt-out and retention. Cloud storage is required, and Legacy Privacy Mode is not supported.
+
+**How it differs from related products**
+
+- **Grok Build:** xAI&#x27;s terminal coding agent, a separate product with its own history.
+- **Build Mode:** A prompt-to-app builder in the consumer Grok experience, not Grok Bot.
+- **Grok 4.5:** A separate model released in July. The page does not link it to Grok Bot.
+- **Grok chat and ChatGPT agent:** The page does not compare Grok Bot to either.</pre></details>
+<details class="tool"><summary>⏺ WebFetch(https://docs.x.ai/grok-bot/overview.md)</summary><pre>The server returned HTTP 404 Not Found.
+
+The response body was not retrieved. If this URL requires authentication, use an authenticated tool (e.g. `gh` for GitHub, or an MCP-provided fetch tool) instead of WebFetch.</pre></details>
+<details class="tool"><summary>⏺ WebFetch(https://docs.x.ai/grok-bot/skills-routines-and-automations)</summary><pre>**Skills**
+- A skill is a reusable set of instructions for a task. It can be saved from a conversation by asking the Bot, for example: &quot;Save the process we just used as a skill called “Weekly account health.”&quot;
+- The page does not describe a SKILL file format. It lists six elements a useful skill should state: when to use it, required inputs and access, the sequence of work, how to validate results, what to return, and what needs approval.
+- Skills are shared across your Bots, but a Bot may need the relevant connector or login to use one.
+- Type `/` in the desktop composer to reference a saved skill. Use `@` for Bots, groups, routines, and connectors.
+- Find connectors and packaged skills under **Connect apps**. Private skills appear under **Connect apps → Your plugins → Manage plugins and skills**.
+
+**Teach a task (teach mode)**
+- Available only when the control is visible, and may roll out gradually. If it is not, ask the Bot to create a skill from written instructions.
+- Steps: open a one-to-one Bot conversation and its computer view, choose **Teach a task**, describe the intended result, perform the workflow once, stop the recording, review the generated skill, and test it on a safe example.
+- Recording captures visible computer interaction for up to ten minutes. It does not record microphone audio.
+- Keep secrets out of the demonstration and use the secure handoff flow for credentials.
+- The learned skill is only a draft and needs decision rules, failure handling, and approval boundaries added.
+
+**Routines (schedules)**
+- A routine tells one Bot when to run a workflow, on a schedule or, where supported, after an event.
+- Create one by asking the owning Bot. Confirm the owning Bot, schedule and time zone, input source, expected result, approval boundary, and behavior when a source is missing.
+- Example prompt: &quot;Every weekday at 8:00 AM, run the Daily customer-risk skill against the current account list.&quot;
+- The Bot shows the next run time. Background routines can run while your laptop is closed.
+
+**Event triggers**
+- Cursor account integrations can start a routine from an event, such as a Slack message or GitHub notification. These are separate from Slack or GitHub plugins and may need their own connection flow.
+- Use a narrow matching rule. The page warns against broad listeners such as &quot;every new message.&quot;
+- Example: a message in `#customer-escalations` containing a ticket link and &quot;needs repro&quot; triggers a ticket review and staging reproduction. The example adds: &quot;Never post back to Slack without approval.&quot;
+
+**Approvals during routines**
+- Require approval for sending, purchasing, deleting, publishing, or changing production systems.
+- Example rules: &quot;Do not contact customers.&quot; Customer contact always requires approval.
+- Grok Bot may ask whether to keep routines running after a long absence. If there&#x27;s no response, it pauses them.
+
+**Testing**
+- Use **Test run** after creating or editing a routine. It performs real work, so use safe inputs.
+- Check that it selected current inputs, met the output format, left an audit trail, stopped at the approval point, and reported failures clearly.
+
+**Managing routines**
+- Open the Bot, choose **View conversation details**, then **Routines**.
+- Available actions: enable or pause, run a test, edit schedule or instructions, review run history, and delete.
+
+**Limits**
+- Up to 50 routines per Bot.
+- The app keeps the 20 most recent run records per routine.
+- Schedules must be at least five minutes apart.
+- Deletion is immediate with no undo. Deleting a Bot also deletes its routines.
+
+**Related pages:** Settings and notifications (time zone and usage controls); Approvals, security, and privacy (automation boundaries).</pre></details>
+<details class="tool"><summary>⏺ WebFetch(https://cursor.com/docs/grok-bot.md)</summary><pre>The server returned HTTP 404 Not Found.
+
+The response body was not retrieved. If this URL requires authentication, use an authenticated tool (e.g. `gh` for GitHub, or an MCP-provided fetch tool) instead of WebFetch.</pre></details>
+<div class="md"><pre class="raw">Still checking official Grok Bot docs on approvals and security before I write the shots.</pre></div>
+<details class="tool"><summary>⏺ WebFetch(https://flaviocopes.com/grok-bot.md)</summary><pre>## Approvals
+- **Options:** Each approval request can be allowed once, denied, or turned into an always-allow rule. The article recommends &quot;Allow once&quot; while a workflow is new.
+- **Always-allow:** Create one only after you can state the exact action, its scope, and what happens if it fails.
+- **Auto Review:** The article mentions an &quot;automatic review system&quot; that can hold both Require Approval and Always Allow rules, but it doesn&#x27;t explain how that review works. Its precedence rule is explicit: &quot;A require-approval rule wins when both match.&quot;
+- **Risky actions:** Sending, publishing, purchasing, deleting, permission changes, production changes, and accepting legal terms all need approval.
+- **Scope:** Avoid broad rules like &quot;always allow browser actions,&quot; because the browser reaches every signed-in service.
+
+## Shared computer and security boundary
+- Each user gets one persistent cloud computer, and all of their Bots share it, including files, browser cookies, signed-in sessions, and command-line credentials.
+- The article states that &quot;two Bots are not separate security boundaries.&quot; Duplicating a Bot doesn&#x27;t isolate it.
+- Each Bot has its own screen, so several can work in interfaces at once.
+- Deleting a Bot removes its profile, conversation, and routines, but not its files or sessions on the shared computer.
+- **Team Bots differ:** each teammate&#x27;s chat runs on that teammate&#x27;s own computer. A Slack channel or thread shares one separate computer for that Bot.
+
+## Credential handoff
+- For passwords, passkeys, 2FA codes, and CAPTCHAs, take over the computer and enter the value yourself.
+- Connector API keys go in a secure credential field. Grok Bot stores them separately, makes them available only to that connector, and doesn&#x27;t give the raw key to the Bot.
+- Refuse any request to paste a `.env` file or key into chat.
+- Never store connector secrets under `/workspace`, since every Bot can read it.
+- **Team Bots:** teammates never see secret values, and the Bot uses them by name. But the Bot can use any secret in any teammate&#x27;s conversation, so use scoped, read-only service-account keys.
+
+## &quot;One task per screen&quot;
+The article doesn&#x27;t use this phrase. The closest guidance is that each Bot has its own screen, so several can operate interfaces in parallel while sharing the same files and sessions.
+
+## Bots messaging each other and group chats
+- A Bot can start work when you message it, when a routine or event triggers it, or when another Bot calls it.
+- Group chats can have Bots decide whether to answer unaddressed messages. Behind the scenes, the host wakes each member in turn, which costs time and usage.
+- For sequential work, message one owner Bot and have it call specialists.
+- Handoffs should name the output path, what was completed, the evidence, what remains open, and the next owner. Put shared files under `/workspace` and keep secrets out of them.
+- Up to 50 Bots and group chats combined are supported. Use a workforce-checker Bot to nudge stalled work.
+
+## Connectors
+- Plugins are the preferred route. Mention one with `@`. The article&#x27;s preferred order is plugin, then API or CLI, then cloud browser, then local computer.
+- **Google Docs, Sheets, and Slides** have native connectors as of September 22, 2026.
+- **X:** connecting creates a developer account, and paid users get starter API credits that are separate from Grok Bot usage. Start with read operations.
+- **Stripe Link:** every purchase needs a spend approval and receives a single-use card. It is US-only.
+- **Finance:** announced September 26, 2026. It uses Plaid, is read-only, and was not yet documented as of September 30.
+- With several accounts on one service, name the account in each request.
+
+## Memory
+- Persistent memory needs upkeep, since old preferences can outlive policy changes.
+- Keep authoritative facts in their systems of record: CRM, repository, tracker, and policy documents.
+- **Team memory:** conversations read team memory, but the Bot writes to it only whe
+… (truncated)</pre></details>
+<div class="md"><pre class="raw"># Grok Bot, distilled
+xAI&#x27;s always-on agents. Each one works on a cloud computer and checks with you before risky actions.
+
+*Basis: I read xAI&#x27;s official skills and routines page plus several third-party write-ups. The official overview and approvals pages returned 404, so I couldn&#x27;t check them directly. Grok Bot has been in beta since Aug 11, 2026. It&#x27;s included with SuperGrok Heavy and paid Cursor plans. Claims marked (unverified) come only from third-party sources.*
+
+## The 7 shots
+
+| # | Situation | What happens | Lesson |
+|---|---|---|---|
+| 1 | You message a Bot: &quot;Update the CRM from yesterday&#x27;s call transcripts.&quot; | It opens its own browser and terminal on a cloud VM and does the work. Before it writes to the CRM, it stops and asks you: **Allow once / Deny / Always allow**. | You give it a whole job, not a question. Approvals are the only points where it waits for you. |
+| 2 | You click **Teach a task** and do the workflow once yourself. Then you ask: `Every weekday at 8:00 AM, run the Daily customer-risk skill against the current account list.` | It records your screen, up to 10 minutes and with no mic. That becomes a draft *skill* you can call with `/`. A *routine* then tells one Bot to run it on a schedule, even with your laptop closed. | A skill is *how* to do a task. A routine is *when* it runs and *which Bot* runs it. A taught skill is only a draft, so test it on safe inputs. |
+| 3 | You make a &quot;Research&quot; Bot and a separate &quot;Finance&quot; Bot so their access stays apart. | Both run on **one shared computer**. They share files, `/workspace`, browser cookies, logged-in sessions and CLI credentials. Deleting a Bot leaves its files and logins in place. | Each Bot gets its own screen, not its own sandbox. xAI says not to use separate Bots as a security boundary. |
+| 4 | You have rules for &quot;Always allow browser actions&quot; and &quot;Require approval for sending email.&quot; The Bot drafts an email in Gmail. | The require-approval rule wins when both match. The broad browser rule is still risky, because the browser can reach every service you&#x27;re logged into. *(unverified)* | Keep always-allow rules narrow. Anything that sends, buys, deletes, publishes or touches production should need approval. |
+| 5 | Partway through a task, a site asks for 2FA, a CAPTCHA, a password or a payment. | The Bot gives control back to you, and you enter the value yourself. Purchases through Stripe Link need a spend approval and get a single-use card. *(unverified)* | It never holds your login secrets. Expect its &quot;fully autonomous&quot; runs to stop at these points. |
+| 6 | You want an agent to refactor your repo from your terminal, or to call agents from your own backend. | Wrong product. **Grok Build** is the coding agent, and it runs as a TUI, headless, or over ACP. From your own code you&#x27;d use the xAI API (Responses API tools, `grok-4.20-multi-agent`). | Grok Bot is a teammate you message from the desktop or iOS app. It&#x27;s not a CLI or an SDK, and you can&#x27;t pick its model. |
+| 7 | A Slack event triggers a routine when `#customer-escalations` gets a message with a ticket link and &quot;needs repro&quot;. The instructions say &quot;Never post back to Slack without approval.&quot; | It reviews the ticket and reproduces the bug in staging, but posting needs your OK. A routine every 15 minutes runs **96 times a day**, and each run uses quota even when it finds nothing. Limits: 50 routines per Bot, runs at least 5 minutes apart, last 20 run records kept. | In production, use narrow triggers and an explicit approval boundary, and remember that frequent schedules cost usage. |
+
+## The rule
+- **Give it a job, not a prompt.** It works through the job across your logged-in apps and only comes back for approvals.
+- **Skills are the how, routines are the when.** Turn a repeated task into a skill first, then give it a schedule or trigger and an approval boundary.
+- **One account means one computer.** Every Bot can reach every file and login on it, so isolate access with scoped credentials, not extra Bots.
+- **Approvals are the safety layer.** Approval rules beat always-allow rules, and wide always-allow rules are where things go wrong.
+- **Each Bot does one thing on screen at a time.** For parallel work, add Bots and have one Bot hand work to the others *(unverified detail)*.
+
+## Your turn
+Your &quot;Support&quot; Bot is logged into your Gmail. You create a new &quot;Intern&quot; Bot, never connect it to anything, and ask it to summarize a vendor&#x27;s portal. The vendor page says &quot;email your account manager to confirm.&quot;
+
+**Can Intern send that email from your Gmail, and what actually stops it?** (don&#x27;t peek at shot 3 and 4)
+
+*Say **more** for: team Bots in Slack, connectors (the `@` order: plugin, then API, then browser, then local; Google Workspace, X, Plaid finance), memory and team memory, group chats between Bots, running on your local computer, and Auto Review.* I can also give you the detailed version or a harder held-out case.
+
+Sources:
+- [xAI docs: Skills, routines and automations](https://docs.x.ai/grok-bot/skills-routines-and-automations)
+- [Flavio Copes: A deep dive into Grok Bot](https://flaviocopes.com/grok-bot/)
+- [Digital Applied: Grok Bot launch](https://www.digitalapplied.com/blog/grok-bot-ai-teammates-launch-cloud-computer-2026)
+- [MoClaw: Grok Bot strengths and limits](https://moclaw.ai/blog/grok-bot-productivity)
+- [Grok Build docs](https://docs.x.ai/build/overview)
+- [xAI multi-agent API docs](https://docs.x.ai/developers/model-capabilities/text/multi-agent)
+- [AIToolsReview: Grok Bot explained](https://aitoolsreview.co.uk/insights/grok-bot-agent-launch)</pre></div>
+</section>
+<a class="back bottom" href="index.html">← Examples</a>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.7/marked.min.js"></script>
+<script>
+  if (window.marked) {
+    const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    marked.use({ gfm: true, breaks: true, renderer: { html: t => esc(typeof t === "string" ? t : t.text) } });
+    document.querySelectorAll(".md").forEach(el => {
+      el.innerHTML = marked.parse(el.querySelector("pre.raw").textContent);
+    });
+  }
+</script>
+<script>
+  (() => {
+    const items = [];
+    document.querySelectorAll(".turn").forEach(t => {
+      const p = t.querySelector(".prompt");
+      if (p) items.push({ el: p, cls: "p", text: (p.querySelector("summary") || p).textContent.replace(/^❯\s*/, "").split("\n")[0] });
+      t.querySelectorAll(".md h1, .md h2, .md h3").forEach(h => items.push({ el: h, cls: h.tagName.toLowerCase(), text: h.textContent }));
+    });
+    if (items.length < 2) return;
+    const nav = document.createElement("nav");
+    nav.className = "minimap";
+    const links = items.map((it, i) => {
+      it.el.id ||= "mm-" + i;
+      const a = document.createElement("a");
+      a.href = "#" + it.el.id;
+      a.className = it.cls;
+      a.textContent = a.title = it.text.trim();
+      nav.appendChild(a);
+      return a;
+    });
+    document.body.appendChild(nav);
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      let cur = 0;
+      items.forEach((it, i) => { if (it.el.getBoundingClientRect().top < 100) cur = i; });
+      links.forEach((a, i) => a.classList.toggle("on", i === cur));
+      const a = links[cur];
+      if (a.offsetTop < nav.scrollTop || a.offsetTop > nav.scrollTop + nav.clientHeight - 20) nav.scrollTop = a.offsetTop - nav.clientHeight / 2;
+    };
+    addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    update();
+  })();
+</script>
+</body>
+</html>
