@@ -7,17 +7,18 @@
   <meta name="description" content="Pick a skill and watch it run in Claude Code.">
   <style>
     :root {
-      --bg:#0e0e0e; --win:#151515; --bar:#1b1b1b; --line:#2a2a2a; --code:#1e1e1e;
-      --fg:#d6d6d6; --dim:#7d7d7d; --faint:#4a4a4a; --white:#f2f2f2; --accent:#d97757;
+      --bg:#121214; --win:#18181b; --bar:#1d1d21; --line:#2b2b30; --code:#212126; --card:#17171a;
+      --fg:#cfcdc8; --dim:#8c8a85; --faint:#5a5955; --white:#ecebe6; --accent:#de8a68; --accent-soft:rgba(222,138,104,.12);
       --mono:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       --sans:system-ui, -apple-system, "Segoe UI", sans-serif;
     }
     * { box-sizing:border-box; }
     html, body { background:var(--bg); color:var(--fg); margin:0; }
-    body { font:15px/1.6 var(--sans); padding:48px 16px 40px; }
+    body { font:15px/1.65 var(--sans); padding:56px 16px 48px; -webkit-font-smoothing:antialiased;
+           background:radial-gradient(900px 420px at 50% -120px, rgba(222,138,104,.10), transparent 70%) no-repeat, var(--bg); }
     main { max-width:860px; margin:0 auto; }
 
-    h1 { font:600 15px/1 var(--mono); color:var(--white); margin:0 0 10px; letter-spacing:-.01em; }
+    h1 { font:600 13px/1 var(--mono); color:var(--dim); margin:0 0 22px; letter-spacing:-.01em; }
     h1 span { color:var(--accent); }
     .lede { color:var(--dim); margin:0 0 28px; }
     .lede a { color:var(--dim); }
@@ -35,7 +36,7 @@
     .picker button[aria-pressed="true"] { color:var(--accent); border-color:var(--accent); }
     .blurb { color:var(--dim); font-size:14px; margin:0 0 16px; min-height:1.6em; }
 
-    .win { background:var(--win); border:1px solid var(--line); border-radius:12px; overflow:hidden;
+    .win { background:var(--win); border:1px solid var(--line); border-radius:14px; overflow:hidden;
            box-shadow:0 30px 80px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.02) inset; }
     .bar { display:flex; align-items:center; gap:12px; height:40px; padding:0 14px; background:var(--bar); border-bottom:1px solid var(--line); }
     .dots { display:flex; gap:7px; }
@@ -45,7 +46,7 @@
     .ctl button { font:12px var(--mono); color:var(--dim); background:none; border:0; padding:5px 8px; border-radius:6px; cursor:pointer; }
     .ctl button:hover { color:var(--fg); background:#262626; }
 
-    .screen { height:min(68vh, 640px); overflow-y:auto; padding:20px 22px 28px; font:13.5px/1.7 var(--mono); scrollbar-color:#333 transparent; }
+    .screen { height:min(68vh, 640px); overflow-y:auto; padding:18px 20px 26px; font:12px/1.65 var(--mono); scrollbar-color:#333 transparent; }
     .prompt { color:var(--white); white-space:pre-wrap; overflow-wrap:anywhere; margin:0 0 14px; }
     .prompt::before { content:"❯ "; color:var(--dim); }
     .prompt.next { margin-top:26px; padding-top:18px; border-top:1px dashed var(--line); }
@@ -55,7 +56,7 @@
     .think span { color:var(--dim); }
     .done { color:var(--dim); margin-top:10px; }
     .more { color:var(--dim); margin-top:16px; }
-    .more a { color:var(--accent); }
+    .more a { color:var(--accent); text-decoration:none; border-bottom:1px solid rgba(222,138,104,.4); }
     .err { color:var(--dim); }
 
     .out { position:relative; padding-left:20px; overflow-wrap:anywhere; }
@@ -88,22 +89,66 @@
     .full:hover { color:var(--accent); }
     .hint { color:var(--faint); font:12px var(--mono); margin-top:28px; text-align:center; }
 
+    .hero { margin:0 0 14px; font:700 clamp(34px, 7vw, 56px)/1.05 var(--sans); color:var(--white); letter-spacing:-.035em; }
+    .hero em { font-style:normal; color:var(--accent);
+               background:linear-gradient(100deg, #f0b48f, #de8a68 55%, #c96a4a); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    .problem { margin:8px 0 24px; padding:16px 20px; border-left:2px solid var(--accent); background:linear-gradient(90deg, var(--accent-soft), transparent 80%); border-radius:0 12px 12px 0; }
+    .problem .lbl, .fix { font:11px/1 var(--mono); color:var(--accent); text-transform:uppercase; letter-spacing:.1em; }
+    .problem ul { list-style:none; padding:0; margin:12px 0 0; }
+    .problem li { color:var(--fg); font-size:15px; margin:6px 0; padding-left:20px; position:relative; }
+    .problem li::before { content:"×"; position:absolute; left:0; color:var(--faint); }
+    .fix { display:block; margin:0 0 12px; }
+    .pitch { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; margin:0 0 18px; }
+    .pitch div { min-width:0; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 18px 20px; transition:border-color .2s; }
+    .pitch div:hover { border-color:#3a3a40; }
+    .pitch .lbl { font:11px/1 var(--mono); color:var(--accent); text-transform:uppercase; letter-spacing:.1em; }
+    .pitch h2 { font:600 16px/1.35 var(--sans); color:var(--white); margin:10px 0 6px; }
+    .pitch p { color:var(--dim); font-size:14px; line-height:1.6; margin:0; }
+    .flow { display:flex; flex-wrap:wrap; align-items:center; gap:8px 6px; margin:0 0 52px; font:13px/1 var(--mono); color:var(--faint); }
+    .flow span { color:var(--dim); border:1px solid var(--line); border-radius:999px; padding:8px 12px; }
+    .flow span.gold { color:var(--accent); border-color:rgba(222,138,104,.45); background:var(--accent-soft); }
+    .flow span.end { color:var(--white); }
+    .flow a { color:var(--dim); margin-left:auto; text-decoration:none; }
+    .flow a:hover { color:var(--accent); }
+
+    .eyebrow { font:600 12px/1 var(--mono); color:var(--faint); text-transform:uppercase; letter-spacing:.12em; margin:0 0 14px; }
+
     @media (max-width:600px) {
       body { padding-top:28px; }
-      .screen { padding:16px 14px 24px; font-size:12.5px; height:62vh; }
+      .screen { padding:16px 14px 24px; font-size:11px; height:62vh; }
       .install { flex-direction:column; align-items:stretch; }
       .full { text-align:right; }
       .title, .hint { display:none; }
       .picker .div { display:none; }
       .picker .grp { width:100%; }
+      .pitch { grid-template-columns:minmax(0, 1fr); }
+      .flow a { margin-left:0; width:100%; }
     }
   </style>
 </head>
 <body>
 <main>
   <h1><span>~/</span>smarchone/skills</h1>
-  <p class="lede">Skills for Claude Code that make learning faster. Pick one and watch a real session. <a href="https://github.com/smarchone/skills">GitHub →</a></p>
+  <p class="hero">Conversations <em>worth sharing.</em></p>
 
+  <section class="problem">
+    <span class="lbl">The problem</span>
+    <ul>
+      <li>Every new topic, you type the same "explain it like…" prompts to Claude again.</li>
+      <li>The angle that makes it click is luck. Most chats never get there.</li>
+      <li>When one does, it's lost in your terminal history. Nobody else ever reads it.</li>
+    </ul>
+  </section>
+
+  <span class="fix">The fix</span>
+  <section class="pitch">
+    <div><span class="lbl">Reports</span><h2>Name a topic. Skip the prompting.</h2><p>Each skill already knows how to dig in and lay it out, tuned for how you'll read it.</p></div>
+    <div><span class="lbl">Panels</span><h2>Brainstorm with a founding team.</h2><p>A CEO, PM and Architect push your idea from three sides, a line or two each.</p></div>
+    <div><span class="lbl">Golden conversations</span><h2>One command. A library you can share.</h2><p>Save the session and why it mattered to your public repo, one PR each.</p></div>
+  </section>
+  <p class="flow"><span>report or panel</span>→<span>a session worth keeping</span>→<span class="gold">/golden</span>→<span class="end">shared library</span><a href="https://github.com/smarchone/skills">GitHub →</a></p>
+
+  <p class="eyebrow">See a real session</p>
   <nav class="picker" id="picker"></nav>
   <p class="blurb" id="blurb"></p>
 
@@ -131,10 +176,11 @@
 // Each demo replays turns from an existing example page in this folder.
 // `prompt` optionally shortens the first prompt shown.
 const DEMOS = [
+  { cmd:"few-shot", group:"productivity", kind:"report", file:"few-shot--grok-bot.html", turns:1,
+    prompt:"/few-shot grok bot (xAI's agent). It's new, look it up first.",
+    blurb:"Learn anything from a few sharp examples, then predict a case you haven't seen. Ask for more to fill the gaps." },
   { cmd:"report-panel", group:"productivity", kind:"report", file:"report-panel--claude-code-projects.html", turns:1,
     blurb:"A talk, launch or feature, boiled down to what the product is, with a segment each for the CEO, PM and architect." },
-  { cmd:"few-shot", group:"productivity", kind:"report", file:"few-shot--meko.html", turns:1,
-    blurb:"Learn anything from a few sharp examples, then predict a case you haven't seen. Ask for more to fill the gaps." },
   { cmd:"origin-story", group:"systems", kind:"report", file:"origin-story--cloudflare.html", turns:1,
     blurb:"Why a technology exists, what broke first, and who built it. The story behind the tool." },
   { cmd:"intuition-panel", group:"productivity", kind:"explore", file:"intuition-pannel--kafka.html", turns:4,
@@ -143,7 +189,7 @@ const DEMOS = [
 ];
 const KINDS = {
   report:  { label:"Reports", tip:"Condensed, opinionated, and quick to read" },
-  explore: { label:"Explore", tip:"Interactive: think an idea through" },
+  explore: { label:"Panels", tip:"Interactive: think an idea through" },
 };
 const CHARS_PER_SEC = 420;
 const SPEEDS = [1, 2, 4];
@@ -167,7 +213,7 @@ async function load(demo) {
     const p = t.querySelector(".prompt");
     return {
       prompt: p.textContent.replace(/^❯\s*/, "").trim(),
-      md: t.querySelector("pre.raw")?.textContent ?? "",
+      md: [...t.querySelectorAll("pre.raw")].pop()?.textContent ?? "", // the final reply, not interim status
       done: t.querySelector(".done")?.textContent.trim() ?? "",
     };
   });
@@ -288,10 +334,11 @@ async function play(i) {
       await think(run);
       const [src, cut] = capped(t.md, demo.maxChars);
       await stream(run, src);
-      if (cut) { el("more", `… keeps going. <a href="${demo.file}">Read the full session →</a>`); break; }
+      if (cut) { el("more", "… keeps going."); break; }
       if (t.done) el("done", esc(t.done));
       if (k < turns.length - 1) await wait(run, 900);
     }
+    el("more", `<a href="${demo.file}">Read the full session →</a>`);
     setSkip("replay ↻");
   } catch (e) { if (e !== STOP) throw e; }
 }

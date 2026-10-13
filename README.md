@@ -1,54 +1,50 @@
 # Skills
 
-My agentic skills.
+## Conversations worth sharing.
 
-## Must-try
+See them run: https://smarchone.github.io/skills/
 
-Checkout examples https://smarchone.github.io/skills/.
+## The problem
 
-Start here. 
+- Every new topic, you type the same "explain it like…" prompts to Claude again.
+- The angle that makes it click is luck. Most chats never get there.
+- When one does, it's lost in your terminal history. Nobody else ever reads it.
 
-- **[intuition-panel](productivity/intuition-panel/SKILL.md)**: Interactive panel discussing any topic (a council of a CEO, a PM and an Architect).
-- **[intuition](productivity/intuition/SKILL.md)**: Summarize any blog post or concept from multiple perspectives.
-  - idea : Avoid asking the same questions again and again. use predefined format !
+## Reports
 
+You name the topic. The skill already knows how to research it and how to lay it out, so you don't
+re-explain the format every time. Each one is shaped for a different kind of reading.
+
+| Skill | Read it when you want |
+|---|---|
+| [`/few-shot`](productivity/few-shot/SKILL.md) | To learn a tool from a few sharp examples, then predict one yourself |
+| [`/report-panel`](productivity/report-panel/SKILL.md) | A talk or launch, with a segment each for the CEO, PM and Architect |
+| [`/intuition`](productivity/intuition/SKILL.md) | A blog post or concept from several angles |
+| [`/origin-story`](systems/origin-story/SKILL.md) | Why a technology exists and what broke first |
+
+## Panels
+
+Not a report, a conversation. In [`/intuition-panel`](productivity/intuition-panel/SKILL.md), a CEO, PM and Architect
+react in a line or two each while you brainstorm, so the idea gets pushed from three sides at once.
+
+## Golden conversations
+
+Reports and panels make sessions worth keeping. [`/golden`](productivity/golden/SKILL.md) saves one, meaning the visible
+chat plus *why* it mattered, to your public golden repo as one PR. Over time that repo becomes a
+curated library of conversations you can share.
+
+**report or panel → a session worth keeping → `/golden` → shared library**
+
+## Start here
 
 ```sh
-npx skills add smarchone/skills/productivity/intuition
+npx skills add smarchone/skills/productivity/few-shot
 npx skills add smarchone/skills/productivity/intuition-panel
+npx skills add smarchone/skills/productivity/golden
 ```
 
-## Reference
-
-### [Productivity](productivity/README.md)
-
-Understanding things faster.
-
-- **[intuition](productivity/intuition/SKILL.md)**: Summarize any blog post or concept from multiple perspectives.
-- **[nail-on-the-head](productivity/nail-on-the-head/SKILL.md)**: Tell two similar concepts apart by the one difference that matters.
-- **[few-shot](productivity/few-shot/SKILL.md)**: Learn any concept or tool from a few nontrivial examples, few-shot style.
-- **[feel](productivity/feel/SKILL.md)**: Feel how a system behaves at scale, through simulated scenes with real numbers.
-- **[product-panel](productivity/product-panel/SKILL.md)**: Pressure-test a product idea with a founding team of CEO, PM and an Architect.
-- **[report-panel](productivity/report-panel/SKILL.md)**: Report on a talk or launch, with a segment each for a CEO, PM and an Architect.
-- **[intuition-panel](productivity/intuition-panel/SKILL.md)**: Interactive panel discussion on any topic with a council of CEO, PM and an Architect.
-
-### [Systems](systems/README.md)
-
-Studying a technology, company, or system the way a senior engineer would.
-
-- **[origin-story](systems/origin-story/SKILL.md)**: The origin story of any technology, company, or idea.
-- **[evolve](systems/evolve/SKILL.md)**: How a company or system evolved, one before → after shift at a time.
-- **[rebuild](systems/rebuild/SKILL.md)**: Rebuild any system from scratch, one breaking point at a time.
-- **[adoption](systems/adoption/SKILL.md)**: See how companies actually use a tool, and who moved off it.
-- **[build-vs-buy](systems/build-vs-buy/SKILL.md)**: Decide build vs. buy with real costs and break-even points.
-
-### [Ideas](ideas/README.md)
-
-Shaping and stress-testing an idea before anything gets built.
-
-- **[idea-establish](ideas/idea-establish/SKILL.md)**: Turn a vague idea into a clear one by filling in the missing pieces.
-- **[idea-attack](ideas/idea-attack/SKILL.md)**: Find the holes in an idea before you build it.
-- **[opine](ideas/opine/SKILL.md)**: Weigh both sides of an opinion and find a way to agree.
+More skills, grouped: [Productivity](productivity/README.md) (understanding things faster),
+[Systems](systems/README.md) (studying a system like a senior engineer), [Ideas](ideas/README.md) (stress-testing an idea before you build it).
 
 ## Install
 
