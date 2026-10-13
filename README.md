@@ -27,6 +27,6 @@ npx skills add smarchone/skills/<group>/<skill>
 ### The flow
 
 Reports and panels turn a session into something worth reading. [`/golden`](productivity/golden/SKILL.md)
-saves it, and the saved sessions become a blog.
+saves it, and the saved sessions become a blog: [golden-convo](https://github.com/smarchone/golden-convo).
 
 **report · panel → `/golden` → blog**
