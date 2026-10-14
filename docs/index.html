@@ -99,6 +99,9 @@
     .hero { margin:0 0 14px; font:700 clamp(34px, 7vw, 56px)/1.05 var(--sans); color:var(--white); letter-spacing:-.035em; }
     .hero em { font-style:normal; color:var(--accent);
                background:linear-gradient(100deg, #f0b48f, #de8a68 55%, #c96a4a); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    .tldr { color:var(--fg); margin:0 0 22px; max-width:640px; }
+    .tldr span { font:11px/1 var(--mono); color:var(--accent); text-transform:uppercase; letter-spacing:.1em; margin-right:8px; }
+    .tldr code { font:13px var(--mono); color:var(--accent); background:var(--accent-soft); padding:2px 6px; border-radius:5px; }
     .problem { margin:8px 0 24px; padding:16px 20px; border-left:2px solid var(--accent); background:linear-gradient(90deg, var(--accent-soft), transparent 80%); border-radius:0 12px 12px 0; }
     .problem .lbl, .fix { font:11px/1 var(--mono); color:var(--accent); text-transform:uppercase; letter-spacing:.1em; }
     .problem ul { list-style:none; padding:0; margin:12px 0 0; }
@@ -139,6 +142,7 @@
 <main>
   <h1><span>~/</span>smarchone/skills</h1>
   <p class="hero">Conversations <em>worth sharing.</em></p>
+  <p class="tldr"><span>tl;dr</span> I have good conversations in Claude, but they're stuck in the terminal. So I built the <code>/golden</code> skill to upload them to GitHub Pages.</p>
 
   <section class="problem">
     <span class="lbl">The problem</span>
