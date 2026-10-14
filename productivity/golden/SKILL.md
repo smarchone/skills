@@ -22,12 +22,12 @@ before the first `/golden` prompt, redacts home dir, emails and tokens, and writ
 
 ```sh
 python3 <skill-dir>/scripts/golden.py --why "…" [--why-suggested] --title "<what the session found>" \
-  --labels a,b --golden-turns 4,8 [--mode skill:x] [--thread slug] [--until N] [--pr]
+  --labels a,b --golden-turns 4,8 [--mode skill:x] [--thread slug] [--until N] [--pr [--index]]
 ```
 
 1. **Run without `--pr`.** Defaults to the newest session for the cwd; pass an id or `.jsonl` path otherwise. Reuse labels already in the repo.
 2. **Read it before publishing.** The repo is **public**. Check the cut point, redact what the regex missed (secrets, private names, client details) as `<redacted>`, pick `golden_turns`, and tell the user what you redacted.
-3. **Publish** with `--pr`: a `golden/<id>` branch with only that file (plus its `index.json` entry, if the repo has one), a PR with the why as body, squash-merged at once (Revert undoes it). Return the PR link.
+3. **Publish** with `--pr`: a `golden/<id>` branch with only that file, a PR with the why as body, squash-merged at once (Revert undoes it). Add `--index` to also list it in the repo's `index.json`, for sites that show only indexed sessions. Return the PR link.
 
 No log or no script (another harness, or running as a command) → stop and say so. Never write the turns yourself.
 
