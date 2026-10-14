@@ -8,11 +8,11 @@ subagent traffic. Redacts the home dir, emails and token-shaped strings.
 
 Usage:
   golden.py [SESSION] --repo DIR --why "..." [--why-suggested] --title "..." [--slug S] [--labels a,b] [--golden-turns 4,8]
-            [--mode skill:x] [--until N] [--pr]
+            [--mode skill:x] [--until N] [--pr [--index]]
 
 SESSION is a .jsonl path or a session id; omitted, it's the newest session for the current directory.
 Turns stop before the first /golden prompt (or the last prompt, if none) unless --until N. Writes
-<repo>/<YYYY-MM>/<YYYY-MM-DD>-<slug>.md; --pr also opens a PR with it and squash-merges it. Stdlib only.
+<repo>/<YYYY-MM>/<YYYY-MM-DD>-<slug>.md; --pr also opens a PR with it and squash-merges it; --index adds it to the repo's index.json in that PR. Stdlib only.
 """
 import argparse, datetime, glob, json, os, re, subprocess, sys
 
@@ -148,6 +148,7 @@ def main():
     ap.add_argument("--thread")
     ap.add_argument("--until", type=int, help="keep turns 1..N instead of cutting at the save request")
     ap.add_argument("--pr", action="store_true", help="open a PR with this file and merge it")
+    ap.add_argument("--index", action="store_true", help="with --pr, also add the session to the repo's index.json")
     a = ap.parse_args()
     if not a.repo:
         sys.exit("no golden repo: pass --repo or set GOLDEN_REPO")
@@ -190,8 +191,15 @@ def main():
         base = gh("repo", "view", "--json", "defaultBranchRef", "-q", ".defaultBranchRef.name")
         git("fetch", "origin", base)
         git("switch", "-c", branch, f"origin/{base}")
-        git("add", rel)
-        git("commit", "-m", f"golden: {a.title}", "--", rel)
+        files = [rel]
+        index = os.path.join(a.repo, "index.json")
+        if a.index and os.path.exists(index):  # the site lists only sessions in index.json
+            entries = json.load(open(index, encoding="utf-8"))
+            if rel not in entries:
+                open(index, "w", encoding="utf-8").write(json.dumps(sorted(entries + [rel]), indent=2) + "\n")
+            files.append("index.json")
+        git("add", *files)
+        git("commit", "-m", f"golden: {a.title}", "--", *files)
         git("push", "-u", "origin", branch)
         url = gh("pr", "create", "--base", base, "--head", branch, "--title", f"golden: {a.title}", "--body", a.why)
         gh("pr", "merge", url, "--squash", "--delete-branch")
