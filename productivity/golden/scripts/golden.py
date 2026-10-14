@@ -12,7 +12,7 @@ Usage:
 
 SESSION is a .jsonl path or a session id; omitted, it's the newest session for the current directory.
 Turns stop before the first /golden prompt (or the last prompt, if none) unless --until N. Writes
-<repo>/<YYYY-MM>/<YYYY-MM-DD>-<slug>.md; --pr also opens a PR with it and squash-merges it. Stdlib only.
+<repo>/<YYYY-MM>/<YYYY-MM-DD>-<slug>.md; --pr also adds it to the repo's index.json (if any), opens a PR and squash-merges it. Stdlib only.
 """
 import argparse, datetime, glob, json, os, re, subprocess, sys
 
@@ -190,8 +190,15 @@ def main():
         base = gh("repo", "view", "--json", "defaultBranchRef", "-q", ".defaultBranchRef.name")
         git("fetch", "origin", base)
         git("switch", "-c", branch, f"origin/{base}")
-        git("add", rel)
-        git("commit", "-m", f"golden: {a.title}", "--", rel)
+        files = [rel]
+        index = os.path.join(a.repo, "index.json")
+        if os.path.exists(index):  # the site lists only sessions in index.json
+            entries = json.load(open(index, encoding="utf-8"))
+            if rel not in entries:
+                open(index, "w", encoding="utf-8").write(json.dumps(sorted(entries + [rel]), indent=2) + "\n")
+            files.append("index.json")
+        git("add", *files)
+        git("commit", "-m", f"golden: {a.title}", "--", *files)
         git("push", "-u", "origin", branch)
         url = gh("pr", "create", "--base", base, "--head", branch, "--title", f"golden: {a.title}", "--body", a.why)
         gh("pr", "merge", url, "--squash", "--delete-branch")
