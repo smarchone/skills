@@ -26,9 +26,11 @@ Everything two things have in common is noise for this task. The signal is the
 
 ## Format
 
-Default to one line per concept, structurally parallel so the contrast pops:
+Open with a single-line intro naming the bucket they belong to (what they are and why they're comparable), then one line per concept, structurally parallel so the contrast pops:
 
 ```
+Both are **<shared bucket>** — <what they do in one clause>.
+
 - **X** is for <its differentiator>.
 - **Y** is for <its differentiator>.
 ```
@@ -60,8 +62,9 @@ eye lands right on the words that changed.
   cleanly than definition. People confuse two things because they overlap in
   what they are; they stop confusing them once they see they're *for* different
   jobs.
-- **Skip the shared middle.** Don't explain what they have in common or why
-  they're confused. Go straight to the fork.
+- **Keep the shared ground to one line.** Name the bucket they belong to in
+  the intro, then skip the rest of what they have in common and go straight to
+  the fork.
 
 ## When to add a second line
 
@@ -86,4 +89,4 @@ Reach for X when <situation>; Y otherwise.
   differentiator for the reading you assumed in one clause, so a wrong
   assumption is easy to spot and correct.
 - Never pad. No "Great question," no "It depends," no restating the question.
-  Open with the contrast.
+  Open with the one-line bucket intro and the contrast.
