@@ -32,24 +32,53 @@ Two modes, same shots. **Distilled is the default.** Give **Detailed** when the 
 ("detailed", "elaborate", "go deeper", "full version").
 
 ### Distilled (default)
-One table, one row per shot. Scannable in seconds; cut words, not insight. Write cells as short plain
-sentences, not shorthand. Keep artifacts tiny: an inline command, prompt, or config line, in `code` when it is code.
-The rule section is plain English: each bullet is a bold rule, then one short sentence on what it means for you.
+One spaced-out block per shot instead of a table. Scannable in seconds; cut words, not insight. Give each
+section (`Situation`, `What happens`, `Lesson`) its own paragraph with a blank line between sections, and
+write each as 2 short plain sentences on separate lines (trailing two spaces for line breaks). Separate shots
+with `---`. Keep artifacts tiny: an inline command, prompt, or config line, in `code` when it is code.
+The rule section uses the same airy spacing: a bold rule on one line, one short sentence on the next, with
+a blank line between rules.
 
 ````text
 # <Target>, distilled
 <one line: what it is, at most 15 words>
 
+---
+
 ## The <N> shots
 
-| # | Situation | What happens | Lesson |
-|---|---|---|---|
-| 1 | <the input or setup, a sentence or `inline code`> | <what happens> | <the one thing it teaches> |
+### 1. <Short title>
+
+**Situation**  
+<sentence 1: the setup or input, with `inline code` if useful>  
+<sentence 2: the trigger or condition>
+
+**What happens**  
+<sentence 1: the immediate behavior or output>  
+<sentence 2: the consequence>
+
+**Lesson**  
+<sentence 1: the one thing it teaches>  
+<sentence 2: what to do instead or why it matters>
+
+---
+
+### 2. <Short title>
+…
+
+---
 
 ## The rule
-- **<Rule in a few words>.** <what it means in practice, one short sentence>   (3-5 bullets)
+
+**<Rule in a few words>.**  
+<what it means in practice, one short sentence>
+
+(3-5 rules, separated by blank lines)
+
+---
 
 ## Your turn
+
 <one held-out case in one or two lines>
 
 **<the question the user should answer>** (don't give the answer)
