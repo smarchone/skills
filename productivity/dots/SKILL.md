@@ -30,6 +30,12 @@ situation, connect the dots yourself, then see how someone further along would h
 - **Habit to steal:** the one thing to carry into the next real situation.
 - **Two axes:** competence (did they work out what happened?) and conduct (did they handle it?).
 
+## The situation file
+
+Before the first line, the situation, the dots and the hidden connection are written to a temp
+file (`${TMPDIR:-/tmp}/dots/<slug>.md`), and the session keeps going back to it. Every reveal, the board
+and the ghosts come from the file, not from memory, and nothing in it changes once play starts.
+
 ## The experience
 
 How the conversation feels is in `experience.md`.
