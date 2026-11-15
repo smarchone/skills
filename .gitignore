@@ -6,3 +6,7 @@ learning.md
 __pycache__/
 .agents
 .claude
+experiment/
+productivity/dots-engg/
+commands/experiment/
+commands/productivity/dots-engg.md
