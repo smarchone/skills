@@ -82,7 +82,8 @@ Make the debrief easy to scan after a 5-minute sprint—short blocks, clear stru
 1. **Comparison table first:** Use a compact `Phase | Your Run | Staff Simulation | Why It Matters` table (1–2 lines per cell) so the user can see the sequence side-by-side without re-reading paragraphs.
 2. **No hindsight bias:** Standard triage (deploys, logs) and deeper RCA questions are good engineering instincts, not "detours." Compare *sequencing* (what unlocked the next decision fastest), not "extra steps."
 3. **Separate immediate call from full ownership:** Call out what's needed for the **immediate call/mitigation** (what the pack's closing prompt scopes to) vs. **follow-up root-cause fixes** (what an owner owns afterward).
-4. **Staff closing + one takeaway:** End with the Staff closing statement in a blockquote, 1–2 lines on the single highest-leverage shift, and one crisp **Habit to steal** blockquote.
+4. **Staff closing + one takeaway:** Show the Staff closing statement in a blockquote, 1–2 lines on the single highest-leverage shift, and one crisp **Habit to steal** blockquote.
+5. **One Staff-level upgrade:** End with **one** non-trivial suggestion specific to the user's attempt—something that meaningfully moves their framing, investigation leverage, or closing ownership closer to Staff level (skip trivial polish or generic tips). Anchor it to a concrete moment in their run: *what they did → the higher-leverage move → why it matters* (2–3 lines max).
 
 ## Fairness & pacing
 

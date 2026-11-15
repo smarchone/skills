@@ -39,6 +39,7 @@ A 5-minute crucible for software engineers. You live through a realistic situati
    - **Mitigation vs. root-cause ownership:** Distinguish what's needed for the **immediate call** (scoped to the closing prompt) from **follow-up root-cause fixes** (what an owner owns afterward), so deeper RCA instincts are recognized rather than penalized.
    - **Staff closing statement:** Show how the Staff engineer would close, in a short blockquote.
    - **The single shift & habit to steal:** 1–2 lines on the one move or framing shift that changed the most, plus one crisp **Habit to steal** in a blockquote.
+   - **One Staff-level upgrade:** Give **one** non-trivial, concrete suggestion anchored in the user's actual run that would bring their attempt closer to Staff level (skip generic advice or trivial wording tweaks—target a high-leverage shift such as framing the binding constraint, choosing a discriminating check that rules out an entire branch, or owning second-order risk/alignment in the close). Keep it to 2–3 crisp lines: the exact moment in their run, what to do differently, and why it changes the leverage.
    - Do not give numeric scores or level grades unless the user explicitly asks.
 
 ## Pack format (for generated packs)
@@ -143,7 +144,8 @@ Make the debrief easy to scan after a 5-minute sprint—short blocks, clear stru
 1. **Comparison table first:** Use a compact `Phase | Your Run | Staff Simulation | Why It Matters` table (1–2 lines per cell) so the user can see the sequence side-by-side without re-reading paragraphs.
 2. **No hindsight bias:** Standard triage (deploys, logs) and deeper RCA questions are good engineering instincts, not "detours." Compare *sequencing* (what unlocked the next decision fastest), not "extra steps."
 3. **Separate immediate call from full ownership:** Call out what's needed for the **immediate call/mitigation** (what the pack's closing prompt scopes to) vs. **follow-up root-cause fixes** (what an owner owns afterward).
-4. **Staff closing + one takeaway:** End with the Staff closing statement in a blockquote, 1–2 lines on the single highest-leverage shift, and one crisp **Habit to steal** blockquote.
+4. **Staff closing + one takeaway:** Show the Staff closing statement in a blockquote, 1–2 lines on the single highest-leverage shift, and one crisp **Habit to steal** blockquote.
+5. **One Staff-level upgrade:** End with **one** non-trivial suggestion specific to the user's attempt—something that meaningfully moves their framing, investigation leverage, or closing ownership closer to Staff level (skip trivial polish or generic tips). Anchor it to a concrete moment in their run: *what they did → the higher-leverage move → why it matters* (2–3 lines max).
 
 ## Fairness & pacing
 
