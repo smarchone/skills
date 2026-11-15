@@ -4,3 +4,5 @@ exp
 docs/tools/__pycache__
 learning.md
 __pycache__/
+.agents
+.claude
