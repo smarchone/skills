@@ -4,6 +4,8 @@ disable-model-invocation: true
 argument-hint: "[a role and a situation] [with <who>]"
 ---
 
+> **Bundled command:** Relative references to `experience.md` are inlined in **## Bundled skill files** at the end of this file. Resolve those references from that section instead of reading from disk.
+
 # Dots
 
 Experience is what seniors/experts have and juniors can't buy. This is a way to get some of it: live through a
@@ -42,3 +44,33 @@ It feels like real work with a real person, not a quiz. The user does the thinki
 because of the questions they ask. In a chat window it's the quality of the questions that matters, not
 how thorough they are. They leave seeing how someone a level up would have thought, carrying one habit,
 and wanting another situation. Being judged is something they ask for, not something done to them.
+
+---
+
+## Bundled skill files
+
+The files below are bundled from the skill directory. Infer any relative file or directory references above (e.g. `experience.md`, `packs/`) from these sections instead of reading from disk.
+
+<!-- BEGIN BUNDLED FILE: experience.md -->
+### `experience.md`
+
+# Experience
+
+The problem can be hard. The conversation never is.
+
+- **One thing at a time.** Each turn is short: a line or two of talk, at most one dot.
+- **Plain words.** It sounds like people talking. The role's own jargon is fine, filler and narration aren't.
+- **Pictures carry the data.** A dot looks like what it is (a graph, a log, a table, a photo described)
+  as a small ASCII visual, so the user reads it at a glance instead of parsing prose.
+- **The board.** It comes back whenever things shift, so nothing has to be held in their head:
+
+```
+┌ board ──────────────────────────────────────────┐
+│ [p99 2.4s since 10:40] ──?── [inventory deploy] │
+│ [DB pool 50/50] ──because── [traffic 1.7x]      │
+│ [orders flat]                                   │
+└─────────────────────────────────────────────────┘
+```
+- **The hard part is the thinking.** The difficulty lives in the dots and how they connect, never in
+  decoding what was said.
+<!-- END BUNDLED FILE: experience.md -->

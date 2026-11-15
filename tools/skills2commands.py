@@ -22,6 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "commands"
 SKILL_ONLY_KEYS = {"name", "user-invocable"}
+IGNORED_EXTRAS = {"SKILL.md", "intent.md"}
 
 
 def convert(text: str) -> str:
@@ -39,6 +40,58 @@ def convert(text: str) -> str:
     return "".join(["---\n", *kept, "---\n", *lines[end + 1 :]])
 
 
+def collect_extras(skill_dir: Path) -> list[tuple[Path, str]]:
+    """Return sorted (relative_path, content) pairs for extra .md files in skill_dir."""
+    extras = []
+    for path in sorted(skill_dir.rglob("*.md")):
+        rel = path.relative_to(skill_dir)
+        if rel.name in IGNORED_EXTRAS:
+            continue
+        extras.append((rel, path.read_text()))
+    return extras
+
+
+def _insert_bundle_notice(body: str, rel_paths: list[str]) -> str:
+    """Insert a short notice at the top of the command body pointing to bundled files."""
+    notice = (
+        "> **Bundled command:** Relative references to "
+        f"`{'`, `'.join(rel_paths)}` are inlined in **## Bundled skill files** at the end of this file. "
+        "Resolve those references from that section instead of reading from disk.\n\n"
+    )
+    lines = body.splitlines(keepends=True)
+    if lines and lines[0].strip() == "---":
+        end = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+        if end is not None:
+            insert_at = end + 1
+            if insert_at < len(lines) and lines[insert_at].strip() == "":
+                insert_at += 1
+            return "".join([*lines[:insert_at], notice, *lines[insert_at:]])
+    return notice + body
+
+
+def bundle_extras(body: str, extras: list[tuple[Path, str]]) -> str:
+    """Append bundled skill files to the command body when present."""
+    if not extras:
+        return body
+    rel_paths = [rel.as_posix() for rel, _ in extras]
+    parts = [
+        _insert_bundle_notice(body, rel_paths).rstrip("\n"),
+        "\n\n---\n\n## Bundled skill files\n\n"
+        "The files below are bundled from the skill directory. "
+        "Infer any relative file or directory references above (e.g. `experience.md`, `packs/`) "
+        "from these sections instead of reading from disk.\n",
+    ]
+    for rel, content in extras:
+        rel_str = rel.as_posix()
+        parts.append(
+            f"\n<!-- BEGIN BUNDLED FILE: {rel_str} -->\n"
+            f"### `{rel_str}`\n\n"
+            f"{content.strip()}\n"
+            f"<!-- END BUNDLED FILE: {rel_str} -->\n"
+        )
+    return "".join(parts)
+
+
 def build(out: Path) -> list[Path]:
     written = []
     for skill in sorted(ROOT.glob("*/*/SKILL.md")):
@@ -47,7 +100,9 @@ def build(out: Path) -> list[Path]:
             continue
         target = out / group / f"{name}.md"
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(convert(skill.read_text()))
+        converted = convert(skill.read_text())
+        extras = collect_extras(skill.parent)
+        target.write_text(bundle_extras(converted, extras))
         written.append(target)
     return written
 
