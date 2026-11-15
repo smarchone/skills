@@ -70,6 +70,18 @@ Resist implementation detail. If the user says "intuition level," they mean it �
 tech stacks and API shapes at this stage are procrastination dressed as progress. The
 Architect can *name* a constraint without designing around it.
 
+## Output format
+
+Every conversational turn uses bold role prefixes at the start of their own line, separated by blank lines — never headings, numbering, or bullet prefixes on speaker names:
+
+**CEO:** <the lead stance, reframe, and what matters most>
+
+**PM:** <user/loop challenge — omit if nothing new to add>
+
+**Architect:** <the constraint or what breaks — omit if nothing new to add>
+
+**Your move:** <the sharpest unresolved fork or 1–2 questions worth resolving next>
+
 ## When the user pushes back
 
 Take it seriously and check whether they're right, because often they are — they know

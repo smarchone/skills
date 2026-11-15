@@ -88,6 +88,7 @@ If fewer than three survive, don't pad the list. Show what survived and say the 
   carries no signal.
 - **Non-trivial:** at least one exchange should go somewhere only this X would take it. Apply the swap
   test to X's lines too.
+- **Format:** start every turn on its own line with the speaker's name in bold followed by a colon (`**<X>:**` and `**You:**`), separated by blank lines. No headings, numbering, or bullet prefixes on speaker names.
 - No commentary, turning-point notes, or scoring. The reader takes the signals.
 
 ### 4. Offer another round
