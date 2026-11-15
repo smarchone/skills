@@ -1,29 +1,32 @@
 #!/usr/bin/env python3
-"""Extract the visible conversation from a Claude Code session log as a golden session file.
+"""Extract the visible conversation from an agent session log as a golden session file.
 
-Reads the JSONL transcript Claude Code writes under ~/.claude/projects/, so the turns come out exactly
-as written, not recalled. Keeps what the user saw: their prompts, the assistant's replies, and one
+Reads the JSONL transcript the harness writes — Claude Code under ~/.claude/projects/, agy (Antigravity
+CLI) under ~/.gemini/antigravity-cli/brain/<id>/ — so the turns come out exactly as written, not recalled. Keeps what the user saw: their prompts, the assistant's replies, and one
 `[ran: ...]` line per tool call. Drops thinking, system reminders, skill bodies, tool output and
 subagent traffic. Redacts the home dir, emails and token-shaped strings.
 
 Usage:
-  golden.py [SESSION] --repo DIR --why "..." [--why-suggested] --title "..." [--slug S] [--labels a,b] [--golden-turns 4,8]
+  golden.py [SESSION] [--harness claude-code|agy] --repo DIR --why "..." [--why-suggested] --title "..." [--slug S] [--labels a,b] [--golden-turns 4,8]
             [--mode skill:x] [--until N] [--pr [--index]]
 
 SESSION is a .jsonl path or a session id; omitted, it's the newest session for the current directory.
+The harness comes from --harness, else the SESSION path, else claude-code inside Claude Code, else agy
+when agy has a session for this directory.
 Turns stop before the first /golden prompt (or the last prompt, if none) unless --until N. Writes
 <repo>/<YYYY-MM>/<YYYY-MM-DD>-<slug>.md; --pr also opens a PR with it and squash-merges it; --index adds it to the repo's index.json in that PR. Stdlib only.
 """
 import argparse, datetime, glob, json, os, re, subprocess, sys
 
 HOME = os.path.expanduser("~")
+AGY = os.path.join(HOME, ".gemini", "antigravity-cli")
 HIDDEN = re.compile(r"<(system-reminder|local-command-stdout|local-command-caveat)>.*?</\1>\s*", re.S)
 SECRETS = [
     re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+"),
     re.compile(r"\b(sk-[\w-]{16,}|gh[pousr]_\w{20,}|github_pat_\w{20,}|xox[abprs]-[\w-]{10,}|AKIA[0-9A-Z]{16}|AIza[\w-]{30,})"),
     re.compile(r"(?i)\b(bearer|token|api[_-]?key|secret|password)([\"']?\s*[:=]\s*[\"']?)[^\s\"']{8,}"),
 ]
-INTERNAL = {"ToolSearch", "TodoWrite", "TaskCreate", "TaskUpdate"}  # bookkeeping the user doesn't read as a step
+INTERNAL = {"ToolSearch", "TodoWrite", "TaskCreate", "TaskUpdate", "list_permissions"}  # bookkeeping the user doesn't read as a step
 redactions = 0
 
 
@@ -35,6 +38,53 @@ def redact(s):
         s, n = rx.subn(repl, s)
         redactions += n
     return s
+
+
+def agy_log(cid):
+    logs = os.path.join(AGY, "brain", cid, ".system_generated", "logs")
+    return next((p for p in (os.path.join(logs, f) for f in ("transcript_full.jsonl", "transcript.jsonl")) if os.path.exists(p)), None)
+
+
+def agy_workspaces():
+    """conversation id -> workspace dir, from the prompt history agy keeps."""
+    out = {}
+    try:
+        for l in open(os.path.join(AGY, "history.jsonl"), encoding="utf-8"):
+            try:
+                o = json.loads(l)
+            except ValueError:
+                continue
+            if o.get("conversationId") and o.get("workspace"):
+                out[o["conversationId"]] = o["workspace"]
+    except OSError:
+        pass
+    return out
+
+
+def find_agy_session(arg):
+    if arg and os.path.exists(arg):
+        return arg
+    if arg:
+        hits = [agy_log(arg)]
+    else:
+        cwd = os.path.realpath(os.getcwd())
+        ids = [c for c, w in agy_workspaces().items() if os.path.realpath(w) == cwd]
+        hits = sorted(filter(None, map(agy_log, ids)), key=os.path.getmtime)[-1:]
+    hits = [h for h in hits if h]
+    if not hits:
+        sys.exit(f"agy session not found: {arg or os.getcwd()}")
+    return hits[0]
+
+
+def pick_harness(choice, arg):
+    if choice:
+        return choice
+    if arg:
+        return "agy" if os.path.realpath(arg).startswith(os.path.realpath(AGY)) or (not os.path.exists(arg) and agy_log(arg)) else "claude-code"
+    if os.environ.get("CLAUDECODE"):
+        return "claude-code"
+    cwd = os.path.realpath(os.getcwd())
+    return "agy" if any(os.path.realpath(w) == cwd for w in agy_workspaces().values()) else "claude-code"
 
 
 def find_session(arg):
@@ -68,9 +118,10 @@ def prompt_text(content):
 
 def ran(name, inp):
     """One line for a tool call, in the words the user saw in the terminal."""
-    if name == "AskUserQuestion":
+    if name in ("AskUserQuestion", "ask_question"):
         return "[asked: " + " / ".join(q.get("question", "") for q in inp.get("questions", [])) + "]"
-    for key in ("description", "query", "url", "file_path", "pattern", "skill", "command", "prompt"):
+    for key in ("description", "toolSummary", "query", "url", "file_path", "pattern", "skill", "command", "prompt",
+                "CommandLine", "AbsolutePath", "TargetFile", "Url", "Query", "DirectoryPath", "Prompt"):
         v = inp.get(key)
         if isinstance(v, str) and v.strip():
             return f"[ran: {name} — {v.strip().splitlines()[0][:120]}]"
@@ -84,16 +135,29 @@ def answer(content):
     return f"[answered: {m.group(1)}]" if m else None
 
 
-def load(path):
-    """Turns as [(role, text)], consecutive same-role pieces merged, plus session metadata."""
-    records = [json.loads(l) for l in open(path, encoding="utf-8") if l.strip()]
-    meta, asks, turns = {}, set(), []
+def collector():
+    turns = []
 
     def add(role, text):
         if turns and turns[-1][0] == role:
             turns[-1][1].append(text)
         else:
             turns.append((role, [text]))
+    return turns, add
+
+
+def joined(turns):
+    """Consecutive same-role pieces merged; [ran: …] lines stack, prose gets a blank line."""
+    join = lambda parts: "".join(("\n" if p.startswith("[") and q.startswith("[") else "\n\n") + q
+                                 for p, q in zip([""] + parts, parts)).lstrip()
+    return [(r, join(parts)) for r, parts in turns]
+
+
+def load_claude(path):
+    """Turns as [(role, text)] from a Claude Code session log, plus session metadata."""
+    records = [json.loads(l) for l in open(path, encoding="utf-8") if l.strip()]
+    meta, asks = {}, set()
+    turns, add = collector()
 
     for o in records:
         if o.get("isSidechain") or o.get("isCompactSummary"):
@@ -119,9 +183,51 @@ def load(path):
                     if b["name"] == "AskUserQuestion":
                         asks.add(b["id"])
                     add("assistant", ran(b["name"], b.get("input", {})))
-    join = lambda parts: "".join(("\n" if p.startswith("[") and q.startswith("[") else "\n\n") + q
-                                 for p, q in zip([""] + parts, parts)).lstrip()
-    return [(r, join(parts)) for r, parts in turns], meta
+    return joined(turns), meta
+
+
+def load_agy(path):
+    """Turns as [(role, text)] from an agy transcript_full.jsonl, plus session metadata.
+
+    Each line is one step. USER_INPUT holds the prompt inside <USER_REQUEST>; PLANNER_RESPONSE holds the
+    reply text and tool_calls; ASK_QUESTION holds the user's answers as "A1: …" lines. Everything else
+    (tool output, ephemeral/system messages, checkpoints) is dropped. Subagents log to their own dirs.
+    """
+    meta = {}
+    turns, add = collector()
+    cid = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(path)))))
+    meta["session_id"] = cid
+    meta["cwd"] = agy_workspaces().get(cid)
+    try:
+        meta["version"] = subprocess.run(["agy", "--version"], capture_output=True, text=True, timeout=10).stdout.strip() or None
+    except (OSError, subprocess.SubprocessError):
+        pass
+    for l in open(path, encoding="utf-8", errors="replace"):
+        try:
+            o = json.loads(l)
+        except ValueError:
+            continue
+        meta["started"] = meta.get("started") or o.get("created_at")
+        kind = o.get("type")
+        if kind == "USER_INPUT":
+            content = o.get("content") or ""
+            m = re.search(r"<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>", content, re.S)
+            text = (m.group(1) if m else HIDDEN.sub("", content)).strip()
+            if text:
+                add("user", text)
+        elif kind == "PLANNER_RESPONSE" and turns:
+            meta["model"] = meta.get("model") or o.get("model")
+            if (o.get("content") or "").strip():
+                add("assistant", o["content"].strip())
+            for t in o.get("tool_calls") or []:
+                if t.get("name") not in INTERNAL:
+                    args = t.get("args")
+                    add("assistant", ran(t.get("name", "?"), args if isinstance(args, dict) else {}))
+        elif kind == "ASK_QUESTION" and turns:
+            picks = re.findall(r"^A\d+: (.*)$", o.get("content") or "", re.M)
+            if picks:
+                add("user", "[answered: " + " / ".join(picks) + "]")
+    return joined(turns), meta
 
 
 def frontmatter(f):
@@ -137,6 +243,7 @@ def frontmatter(f):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("session", nargs="?")
+    ap.add_argument("--harness", choices=("claude-code", "agy"), help="whose log to read (default: auto)")
     ap.add_argument("--repo", default=os.environ.get("GOLDEN_REPO"), help="golden repo clone (default $GOLDEN_REPO)")
     ap.add_argument("--why", required=True)
     ap.add_argument("--why-suggested", action="store_true", help="the why was drafted by the agent, not the user")
@@ -153,8 +260,9 @@ def main():
     if not a.repo:
         sys.exit("no golden repo: pass --repo or set GOLDEN_REPO")
 
-    path = find_session(a.session)
-    turns, meta = load(path)
+    harness = pick_harness(a.harness, a.session)
+    path = find_agy_session(a.session) if harness == "agy" else find_session(a.session)
+    turns, meta = (load_agy if harness == "agy" else load_claude)(path)
     if a.until:
         turns = turns[:a.until]
     else:  # stop before the first request to save; no /golden in the log → before the last prompt
@@ -171,7 +279,7 @@ def main():
     fm = frontmatter({
         "schema": 1, "id": sid, "title": a.title, "why": a.why,
         "why_source": "suggested" if a.why_suggested else "user",
-        "harness": "claude-code", "harness_version": meta.get("version"), "model": meta.get("model"),
+        "harness": harness, "harness_version": meta.get("version"), "model": meta.get("model"),
         "session_id": meta.get("session_id"), "source_path": redact(path), "started": meta.get("started"),
         "captured": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "cwd": redact(meta.get("cwd") or ""),
         "mode": a.mode, "turns": len(turns), "complete": True,

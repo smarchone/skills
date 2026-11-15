@@ -1,5 +1,5 @@
 ---
-description: Turn a talk, video, article, or launch into a short report a CEO, PM, and Architect can each read in their own segment: what the product is, how it fits together, and what it means for each of them.
+description: "Turn a talk, video, article, or launch into a short report a CEO, PM, and Architect can each read in their own segment : what the product is, how it fits together, and what it means for each of them."
 disable-model-invocation: true
 argument-hint: "<source url or file> [for whom] [output path]"
 ---
