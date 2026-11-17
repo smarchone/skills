@@ -1,6 +1,7 @@
 ---
 name: vocab
-description: Write or refresh a concise vocabulary.md that turns any detailed source (a codebase, blog post, spec, design doc, research) into a steerable abstraction for humans: its core constructs and how they compose. Use when the user asks for a vocabulary, glossary, domain model, concepts or onboarding doc, or "how the pieces fit".
+description: >-
+  Write or refresh a concise vocabulary.md that turns any detailed source (a codebase, blog post, spec, design doc, research) into a steerable abstraction for humans: its core constructs and how they compose. Use when the user asks for a vocabulary, glossary, domain model, concepts or onboarding doc, or "how the pieces fit".
 ---
 
 # Domain vocabulary
