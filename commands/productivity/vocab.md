@@ -45,6 +45,10 @@ Three ideas drive everything below:
 **Below:** the detail: <the code, the full post, the spec>. Go there only when changing one construct.
 **Does:** … · **Doesn't:** …
 
+## The map
+<An ASCII stack, read bottom-up: one box row per construct (step number, name, a role of ≤ 6 words), the outcome
+above the top, and one line under it naming what you get if you stop early. Under 20 lines; align it exactly.>
+
 ## How it's built up
 Running example: <one real scenario>.
 
@@ -60,8 +64,18 @@ Now you get: <what neither piece had alone>.
 
 … <the last step is the whole thing as its audience sees it>
 
-## The whole picture
-<Small ASCII diagram with the example flowing through. The core loop or thesis as a one-line code block.>
+## The idea, reconstructed
+<4–7 bullets that rebuild the whole idea from the vocabulary alone: the problem first, then each construct in
+build-up order as the answer to the gap the previous bullet left, and a last bullet on the outcome it serves. One
+sentence per bullet, using the bold terms and no new ones. Read top to bottom, the bullets make one argument, not a
+list: someone who reads only these should be able to explain the thing to someone else.>
+
+| Construct | Does for the outcome | Without it |
+|---|---|---|
+<one row per construct, in build-up order; each cell ≤ 10 words. "Without it" names the concrete failure, so the
+reader sees every construct is load-bearing.>
+
+<The core loop or thesis as a one-line code block.>
 
 ## Decisions
 <4–7 numbered: a bold claim, then one sentence of why.>
@@ -75,10 +89,16 @@ Tag anything not built or not yet settled as *planned*, in place.
 ## Taste
 
 - **The first screen stands alone.** Someone who stops after the first steps should have a correct, partial picture.
-- **One new idea per step.** Never use a term before its step; never re-explain it after.
+- **Map first, then detail.** The map previews every construct by name and role, so the reader has the shape
+  before the build-up fills it in.
+- **One new idea per step.** Outside the map, never use a term before its step; never re-explain it after.
 - **Same example all the way down.** It grows with each step; never switch scenarios.
 - **Unlocks in the reader's terms.** "The learner gets instant feedback", not "`judge()` returns a score".
 - **Order by dependency, not by where things sit in the source.**
+- **Stitch it back together.** The vocabulary takes the idea apart; the reconstruction puts it back as one
+  argument ending on what the product, business or thesis delivers; the table then shows each piece is
+  load-bearing. A table or diagram alone is not the whole picture. If a construct has no place in the story or no
+  "without it", it isn't core.
 - **Concrete beats abstract.** If the example says it, drop the sentence.
 - **Stay at altitude.** No internals, file lists, constants, recipes or hedges ("mostly", "originally") below; no
   slogans the reader can't act on above.
