@@ -16,6 +16,7 @@ Skills for understanding things faster — building intuition, separating concep
 | [`/chatxy`](chatxy/SKILL.md) | You're about to talk with someone X about Y | Profiles X, Y, and you, then simulates the conversation; interviews also get a few non-trivial questions |
 | [`/product-panel`](product-panel/SKILL.md) | You're exploring a product idea, not building it yet | A CEO takes positions while a PM and Architect challenge; can produce a product doc, positioning, or build order |
 | [`/connect-the-dots`](connect-the-dots/SKILL.md) | You want experience, not just knowledge | Plays a curated investigation as a chat with a colleague; you connect the dots, then see how L3, L5, and Staff engineers would have done it, plus one habit to steal |
+| [`/todo`](todo/SKILL.md) | You want one place to iterate on a repo's idea | Encodes the repo as a compact `TODO` at its root: pitch, layout, nouns, rules, flows, then now / open questions / later |
 | [`/dots`](dots/SKILL.md) | Same, with no setup | The lighter connect-the-dots: just the constructs and the experience it aims for; Claude makes up the situation and runs it |
 
 - `/intuition-panel` is the lightweight version of `/product-panel`.
