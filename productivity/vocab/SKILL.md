@@ -13,8 +13,9 @@ From the vocabulary alone, the reader can steer the thing and take decisions ("s
 
 Three ideas drive everything below:
 
-1. **Composition, not a glossary.** Words alone don't say why each piece exists. Build the whole up one construct at
-   a time and show what each one unlocks, so the complexity feels earned.
+1. **Each section is a different view.** What flows, which settings combine, which part does what, which rules
+   decide, what was refused. Five views of one system, none repeating another. Then one closing summary puts them
+   back together.
 2. **Direction, not instruction.** "Use Postgres" goes stale. "Relational integrity across tenants; document store
    ruled out for reporting" lets anyone derive the next steps. Record the *why*.
 3. **Attention is the budget.** Every line spends the reader's attention. Keep a line only if it would change how
@@ -24,16 +25,19 @@ Three ideas drive everything below:
 
 1. **Scope.** Find the source the user means. For a codebase, respect CLAUDE.md rules about which folders to read.
 2. **Read the source itself**, not a summary of it. For code, docs tell you intent; code tells you what is true.
-3. **Find:**
+3. **Find the shape before the words:**
    - *why* it exists, for whom, and what it deliberately doesn't do or claim;
-   - the 4–7 core *constructs*, in the source's own names (more won't fit in a reader's head: group or drop);
-   - their *order of composition*: the atom first, each next one adding something the reader would notice (for a
-     product, a capability; for an argument, a step in the case); if it adds nothing, it isn't core;
-   - one real *running example* to trace through every step;
-   - the *decisions* behind the shape and what was *ruled out* (ask the user when the source can't tell you).
-4. **Write** the doc below, next to the source unless the user says otherwise.
-5. **Verify every name and example against the source.** If a word means different things in two places, pick the
-   most authoritative one (for code, the code) and tell the user.
+   - the *main flow*, in one line;
+   - the *independent settings* every use combines (e.g. *what* × *how* × *how much help*), if there are any.
+     Often the single most useful insight;
+   - the 4–7 *parts*, each with one job (more won't fit in a reader's head: group or drop);
+   - the *design rules* behind the shape and what was *ruled out*. Infer them from how the source is built; ask
+     the user for the why when the source can't tell you;
+   - the pairs a newcomer will *confuse*.
+4. **Pick the words.** Use the source's own names. If a word means different things in two places, pick the most
+   authoritative one (for code, the code) and tell the user.
+5. **Write** the doc below. Next to the source for a codebase or local file; for a URL or anything else, ask where.
+6. **Verify every name and example against the source.** One wrong term costs more trust than leaving it out.
 
 ## The doc
 
@@ -42,50 +46,51 @@ Three ideas drive everything below:
 
 ## Where you are
 **Above:** the purpose: <who it's for, what they get>.
-**Here:** the constructs it's made of and how they compose. Hold these in your head.
-**Below:** the detail: <the code, the full post, the spec>. Go there only when changing one construct.
+**Here:** the parts, the rules and how they compose. Hold these in your head.
+**Below:** the detail: <the code, the full post, the spec>. Go there only when changing one part.
+Tags: **today** = in the source now · **planned** = not built or not settled.
+
+## What it is
+<2–3 sentences. Then the main flow as a one-line code block.>
 **Does:** … · **Doesn't:** …
 
-## How it's built up
-Running example: <one real scenario>.
+## <The N settings that shape every use>
+<Only if they exist. Table: Question | Concept | Values. Say that they are independent.>
 
-### 1. **<Atom>** — <what it's for>
-> <the example, as this construct: a real detail from the source>
+## The parts
+<ASCII flow diagram: the parts and what passes between them. This is the map.>
+<Table: Part | One job (one sentence). For a codebase, add a short Where column.>
 
-Gives you: <what it unlocks, in the reader's terms>.
-
-### 2. + **<Next>** — <what it adds>
-> <the same example, one step further>
-
-Now you get: <what neither piece had alone>.
-
-… <the last step is the whole thing as its audience sees it>
-
-## The whole picture
-<Small ASCII diagram with the example flowing through. The core loop or thesis as a one-line code block.>
-
-## Decisions
-<4–7 numbered: a bold claim, then one sentence of why.>
+## Design rules (use these to make judgement calls)
+<5–8 numbered. Each: a bold, sharp claim someone could argue with, then one sentence of why, grounded in a real
+detail from the source.>
 
 ## Ruled out
-<Table: Option | Why not. Only what someone would plausibly re-propose.>
-```
+<Table: We don't… | Because. Only what someone would plausibly re-propose.>
 
-Tag anything not built or not yet settled as *planned*, in place.
+## Don't confuse
+<Optional, 3–5 rows. Table: These | Difference. Only real ambiguities, including one word used two ways.>
+
+## The idea, reconstructed
+<4–7 one-sentence bullets that rebuild the whole thing from the terms above, no new ones: the problem first, each
+next bullet answering the gap the previous one left, the last one the outcome it serves. Read top to bottom they
+make one argument: someone who reads only these should be able to explain it to someone else.>
+```
 
 ## Taste
 
-- **The first screen stands alone.** Someone who stops after the first steps should have a correct, partial picture.
-- **One new idea per step.** Never use a term before its step; never re-explain it after.
-- **Same example all the way down.** It grows with each step; never switch scenarios.
-- **Unlocks in the reader's terms.** "The learner gets instant feedback", not "`judge()` returns a score".
-- **Order by dependency, not by where things sit in the source.**
-- **Concrete beats abstract.** If the example says it, drop the sentence.
-- **Stay at altitude.** No internals, file lists, constants, recipes or hedges ("mostly", "originally") below; no
-  slogans the reader can't act on above.
-- **About three minutes to read, 60–110 lines.** Longer means it's becoming a manual, so cut.
+- **The first screen stands alone.** "Where you are" + "What it is" + the flow line give a correct, partial picture.
+- **Sharp beats soft.** "The audio is the clock" is a decision. "Gives you leverage" is a description. Write
+  decisions.
+- **Never say the same thing twice.** If a section restates another, cut it. The reconstruction is the only
+  summary.
+- **Concrete beats abstract.** A real name, value or example from the source inside a rule beats a sentence
+  explaining the rule.
+- **Stay at altitude.** No internals, field lists, constants, recipes or hedges ("mostly", "originally"); no
+  slogans the reader can't act on.
+- **About three minutes to read, 60–120 lines.** Longer means it's becoming a manual, so cut.
 
 ## Updating
 
-One living doc: new decisions amend it in place, never a new plan file. Keep the existing words, restructure a flat
-glossary into the build-up, and re-check every name against the source, since sources drift.
+One living doc: new decisions amend it in place, never a new plan file. Keep the existing words, restructure into
+the sections above rather than appending, and re-check every name against the source, since sources drift.
