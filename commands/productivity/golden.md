@@ -15,8 +15,9 @@ Transcripts are cheap; the user's **why** is the asset.
 ## Capture
 `scripts/golden.py` (next to this file) reads the session's JSONL log, so turns come out exactly as
 written, not recalled. Supported harnesses: Claude Code (`~/.claude/projects/`) and agy, the Antigravity
-CLI (`~/.gemini/antigravity-cli/brain/<id>/.system_generated/logs/transcript_full.jsonl`). It keeps what
-the user saw: prompts, replies, `[ran: …]` per tool call, `[asked: …]` / `[answered: …]`. It drops reasoning, system prompts, tool output and subagents, stops
+CLI (`~/.gemini/antigravity-cli/brain/<id>/.system_generated/logs/transcript_full.jsonl`). It keeps the
+conversation: prompts, replies, `[asked: …]` / `[answered: …]`. It drops tool calls and their output,
+reasoning, system prompts and subagents, stops
 before the first `/golden` prompt, redacts home dir, emails and tokens, and writes
 `<YYYY-MM>/<YYYY-MM-DD>-<slug>.md` with the frontmatter below.
 

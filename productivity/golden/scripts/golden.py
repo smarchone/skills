@@ -2,9 +2,9 @@
 """Extract the visible conversation from an agent session log as a golden session file.
 
 Reads the JSONL transcript the harness writes — Claude Code under ~/.claude/projects/, agy (Antigravity
-CLI) under ~/.gemini/antigravity-cli/brain/<id>/ — so the turns come out exactly as written, not recalled. Keeps what the user saw: their prompts, the assistant's replies, and one
-`[ran: ...]` line per tool call. Drops thinking, system reminders, skill bodies, tool output and
-subagent traffic. Redacts the home dir, emails and token-shaped strings.
+CLI) under ~/.gemini/antigravity-cli/brain/<id>/ — so the turns come out exactly as written, not recalled. Keeps the conversation: the user's prompts, the assistant's replies, and the
+questions it asked with the user's answers. Drops tool calls and their output, thinking, system
+reminders, skill bodies and subagent traffic. Redacts the home dir, emails and token-shaped strings.
 
 Usage:
   golden.py [SESSION] [--harness claude-code|agy] --repo DIR --why "..." [--why-suggested] --title "..." [--slug S] [--labels a,b] [--golden-turns 4,8]
@@ -26,7 +26,7 @@ SECRETS = [
     re.compile(r"\b(sk-[\w-]{16,}|gh[pousr]_\w{20,}|github_pat_\w{20,}|xox[abprs]-[\w-]{10,}|AKIA[0-9A-Z]{16}|AIza[\w-]{30,})"),
     re.compile(r"(?i)\b(bearer|token|api[_-]?key|secret|password)([\"']?\s*[:=]\s*[\"']?)[^\s\"']{8,}"),
 ]
-INTERNAL = {"ToolSearch", "TodoWrite", "TaskCreate", "TaskUpdate", "list_permissions"}  # bookkeeping the user doesn't read as a step
+ASK = ("AskUserQuestion", "ask_question")  # the only tool calls kept: a question the user answered
 redactions = 0
 
 
@@ -116,16 +116,9 @@ def prompt_text(content):
     return content
 
 
-def ran(name, inp):
-    """One line for a tool call, in the words the user saw in the terminal."""
-    if name in ("AskUserQuestion", "ask_question"):
-        return "[asked: " + " / ".join(q.get("question", "") for q in inp.get("questions", [])) + "]"
-    for key in ("description", "toolSummary", "query", "url", "file_path", "pattern", "skill", "command", "prompt",
-                "CommandLine", "AbsolutePath", "TargetFile", "Url", "Query", "DirectoryPath", "Prompt"):
-        v = inp.get(key)
-        if isinstance(v, str) and v.strip():
-            return f"[ran: {name} — {v.strip().splitlines()[0][:120]}]"
-    return f"[ran: {name}]"
+def asked(inp):
+    """One line for a question put to the user."""
+    return "[asked: " + " / ".join(q.get("question", "") for q in inp.get("questions", [])) + "]"
 
 
 def answer(content):
@@ -147,7 +140,7 @@ def collector():
 
 
 def joined(turns):
-    """Consecutive same-role pieces merged; [ran: …] lines stack, prose gets a blank line."""
+    """Consecutive same-role pieces merged; [asked/answered: …] lines stack, prose gets a blank line."""
     join = lambda parts: "".join(("\n" if p.startswith("[") and q.startswith("[") else "\n\n") + q
                                  for p, q in zip([""] + parts, parts)).lstrip()
     return [(r, join(parts)) for r, parts in turns]
@@ -179,10 +172,9 @@ def load_claude(path):
             for b in msg.get("content", []):
                 if b.get("type") == "text" and b["text"].strip():
                     add("assistant", b["text"].strip())
-                elif b.get("type") == "tool_use" and b["name"] not in INTERNAL:
-                    if b["name"] == "AskUserQuestion":
-                        asks.add(b["id"])
-                    add("assistant", ran(b["name"], b.get("input", {})))
+                elif b.get("type") == "tool_use" and b["name"] in ASK:
+                    asks.add(b["id"])
+                    add("assistant", asked(b.get("input", {})))
     return joined(turns), meta
 
 
@@ -220,9 +212,9 @@ def load_agy(path):
             if (o.get("content") or "").strip():
                 add("assistant", o["content"].strip())
             for t in o.get("tool_calls") or []:
-                if t.get("name") not in INTERNAL:
+                if t.get("name") in ASK:
                     args = t.get("args")
-                    add("assistant", ran(t.get("name", "?"), args if isinstance(args, dict) else {}))
+                    add("assistant", asked(args if isinstance(args, dict) else {}))
         elif kind == "ASK_QUESTION" and turns:
             picks = re.findall(r"^A\d+: (.*)$", o.get("content") or "", re.M)
             if picks:
